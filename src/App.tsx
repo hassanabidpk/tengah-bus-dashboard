@@ -224,8 +224,8 @@ export default function App() {
           <div>
             <h3 className="font-bold text-slate-200">Suggested Route Recommendation</h3>
             <p className="text-sm text-slate-400 mt-1 max-w-xl">
-              {activeTab === 'morning' && '🌅 Morning Commute is active! Take either Bus 872 or 452 from Tengah CC / Blk 113 to go directly to Beauty World MRT Station.'}
-              {activeTab === 'evening' && '🌇 Evening Return is active! Board Bus 674 from UIC Building or take 872 to return home safely to Tengah.'}
+              {activeTab === 'morning' && '🌅 Morning Commute is active! Take Bus 452 to Beauty World MRT, or take Bus 872 to Chinese Garden MRT.'}
+              {activeTab === 'evening' && '🌇 Evening Return is active! Board Bus 674 from UIC Building, or take Bus 872 from Chinese Garden MRT back to Tengah.'}
               {activeTab === 'all' && '🚇 Ready for your commute? Toggle Morning or Evening modes to focus on specific routes, stops, and timings.'}
             </p>
           </div>
