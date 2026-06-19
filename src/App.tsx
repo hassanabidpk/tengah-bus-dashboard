@@ -12,9 +12,11 @@ interface BusStop {
 const STOPS: BusStop[] = [
   { id: '40381', name: 'Blk 111', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['870', '871', '992'] },
   { id: '40389', name: 'Tengah CC', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['452', '674', '871', '992'] },
-  { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872'] },
-  { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872'] },
+  { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'] },
+  { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'] },
   { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'] },
+  { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'] },
+  { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'] },
 ];
 
 interface BusTimingInfo {
@@ -106,8 +108,8 @@ export default function App() {
       
       const buses: BusTimingInfo[] = allBusNumbers
         .filter((busNo) => {
-          // If UIC Bldg, only show target commute buses to prevent clutter
-          if (stop.id === '03129') return stop.guaranteed.includes(busNo);
+          // If UIC Bldg or Bukit Batok Rd stops, only show target commute buses to prevent clutter
+          if (['03129', '43759', '43751'].includes(stop.id)) return stop.guaranteed.includes(busNo);
           return true;
         })
         .map((busNo) => ({
@@ -165,7 +167,7 @@ export default function App() {
 
   const filteredStops = STOPS.filter(stop => {
     if (activeTab === 'all') return true;
-    return stop.type === activeTab;
+    return stop.type === activeTab || stop.type === 'both';
   });
 
   return (
