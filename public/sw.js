@@ -1,4 +1,4 @@
-const CACHE_NAME = 'tengah-bus-dashboard-v1';
+const CACHE_NAME = 'tengah-bus-dashboard-v2';
 const ASSETS = [
   '/',
   '/index.html',
