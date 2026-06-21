@@ -7,16 +7,17 @@ interface BusStop {
   roadName: string;
   type: 'morning' | 'evening' | 'both';
   guaranteed: string[];
+  walkTime: number;
 }
 
 const STOPS: BusStop[] = [
-  { id: '40381', name: 'Blk 111', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['870', '871', '992'] },
-  { id: '40389', name: 'Tengah CC', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['452', '674', '871', '992'] },
-  { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'] },
-  { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'] },
-  { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'] },
-  { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'] },
-  { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984', '871'] },
+  { id: '40381', name: 'Blk 111', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['870', '871', '992'], walkTime: 5 },
+  { id: '40389', name: 'Tengah CC', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['452', '674', '871', '992'], walkTime: 7 },
+  { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'], walkTime: 4 },
+  { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'], walkTime: 4 },
+  { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'], walkTime: 5 },
+  { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 9 },
+  { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984', '871'], walkTime: 5.5 },
 ];
 
 interface BusTimingInfo {
@@ -294,7 +295,7 @@ export default function App() {
                   </div>
                   <div className="flex flex-col items-end gap-1">
                     <span className="text-[10px] font-mono text-slate-500 uppercase tracking-wider">
-                      Code {stop.id}
+                      Code {stop.id} • 🚶 {stop.walkTime}m walk
                     </span>
                     {stopData && (
                       <span
@@ -349,21 +350,43 @@ export default function App() {
                         {/* Timing Indicators */}
                         <div className="flex items-center gap-2">
                           {bus.timings.length > 0 ? (
-                            bus.timings.map((time, idx) => (
-                              <div
-                                key={idx}
-                                className={`px-3 py-1.5 rounded-md font-mono text-sm font-bold flex items-center gap-1 shadow-inner border transition ${
-                                  idx === 0
-                                    ? time === 'Arr'
-                                      ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30 animate-pulse'
-                                      : 'bg-brand-500/20 text-brand-300 border-brand-500/30'
-                                    : 'bg-slate-800/60 text-slate-400 border-slate-800'
-                                }`}
-                              >
-                                <Clock className="w-3.5 h-3.5 opacity-75" />
-                                {time}
-                              </div>
-                            ))
+                            bus.timings.map((time, idx) => {
+                              const mins = time === 'Arr' ? 0 : parseInt(time) || 0;
+                              const leaveMins = mins - stop.walkTime;
+                              
+                              let leaveText = '';
+                              let leaveColor = 'text-slate-500';
+                              if (leaveMins > 0) {
+                                leaveText = `Lv: ${leaveMins}m`;
+                                leaveColor = idx === 0 ? 'text-brand-400 font-bold' : 'text-slate-500';
+                              } else if (leaveMins === 0) {
+                                leaveText = 'Lv: Now';
+                                leaveColor = 'text-amber-400 font-extrabold animate-pulse';
+                              } else {
+                                leaveText = 'Missed';
+                                leaveColor = 'text-rose-500/60 line-through text-[9px]';
+                              }
+
+                              return (
+                                <div key={idx} className="flex flex-col items-center gap-1">
+                                  <div
+                                    className={`px-3 py-1.5 rounded-md font-mono text-sm font-bold flex items-center gap-1 shadow-inner border transition ${
+                                      idx === 0
+                                        ? time === 'Arr'
+                                          ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30 animate-pulse'
+                                          : 'bg-brand-500/20 text-brand-300 border-brand-500/30'
+                                        : 'bg-slate-800/60 text-slate-400 border-slate-800'
+                                    }`}
+                                  >
+                                    <Clock className="w-3.5 h-3.5 opacity-75" />
+                                    {time}
+                                  </div>
+                                  <span className={`text-[10px] font-mono tracking-wider uppercase ${leaveColor}`}>
+                                    {leaveText}
+                                  </span>
+                                </div>
+                              );
+                            })
                           ) : (
                             <div className="text-xs text-slate-500 bg-slate-850 px-3 py-1.5 rounded-md border border-slate-800/80 flex items-center gap-1.5">
                               <AlertTriangle className="w-3.5 h-3.5 text-slate-600" />
