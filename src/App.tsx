@@ -16,7 +16,7 @@ const STOPS: BusStop[] = [
   { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'] },
   { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'] },
   { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'] },
-  { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'] },
+  { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984', '871'] },
 ];
 
 interface BusTimingInfo {
