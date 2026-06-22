@@ -64,10 +64,7 @@ app.get('/api/bus-arrival', async (req: Request, res: Response): Promise<void> =
       const url = `https://arrivelah2.busrouter.sg/?id=${stopCode}`;
       const response = await fetch(url);
       if (response.ok) {
-        const rawData = await response.json();
-        // Standardize ArriveLah to look more like LTA or vice versa
-        // Let's just return a unified structure to make the frontend clean
-        data = rawData;
+        data = await response.json();
       }
     } catch (e) {
       console.error(`ArriveLah API failed for stop ${stopCode}`, e);

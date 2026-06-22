@@ -1,5 +1,5 @@
-const CACHE_NAME = 'tengah-bus-dashboard-v3';
-const STATIC_CACHE_NAME = 'tengah-bus-static-assets-v3';
+const CACHE_NAME = 'tengah-bus-dashboard-v4';
+const STATIC_CACHE_NAME = 'tengah-bus-static-assets-v4';
 
 // Install Event
 self.addEventListener('install', (event) => {
