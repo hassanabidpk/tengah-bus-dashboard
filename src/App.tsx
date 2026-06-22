@@ -8,21 +8,39 @@ interface BusStop {
   type: 'morning' | 'evening' | 'both';
   guaranteed: string[];
   walkTime: number;
+  walkDistance: number;
+  lat: number;
+  lon: number;
 }
 
 const STOPS: BusStop[] = [
-  { id: '40381', name: 'Blk 111', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['870', '871', '992'], walkTime: 5 },
-  { id: '40389', name: 'Tengah CC', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['452', '674', '871', '992'], walkTime: 7 },
-  { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'], walkTime: 4 },
-  { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'], walkTime: 4 },
-  { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'], walkTime: 5 },
-  { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 9 },
-  { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984', '871'], walkTime: 5.5 },
+  { id: '40381', name: 'Blk 111', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['870', '871', '992'], walkTime: 5, walkDistance: 500, lat: 1.35636, lon: 103.73427 },
+  { id: '40389', name: 'Tengah CC', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['452', '674', '871', '992'], walkTime: 7, walkDistance: 550, lat: 1.356473, lon: 103.734424 },
+  { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'], walkTime: 4, walkDistance: 500, lat: 1.3528881, lon: 103.7350774 },
+  { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'], walkTime: 4, walkDistance: 550, lat: 1.3533225, lon: 103.7355067 },
+  { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'], walkTime: 5, walkDistance: 400, lat: 1.2779979, lon: 103.8495113 },
+  { id: '28349', name: 'Opp Chinese Garden Stn', roadName: 'Boon Lay Way', type: 'evening', guaranteed: ['872'], walkTime: 2, walkDistance: 150, lat: 1.3424966, lon: 103.73315 },
+  { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 9, walkDistance: 600, lat: 1.3559686, lon: 103.7369204 },
+  { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984', '871'], walkTime: 5.5, walkDistance: 500, lat: 1.3557122, lon: 103.7364816 },
+  { id: '01519', name: 'The Gateway', roadName: 'Beach Rd', type: 'evening', guaranteed: ['100', '107', '57'], walkTime: 3, walkDistance: 200, lat: 1.2992256, lon: 103.8590512 }
 ];
+
+function getDistanceMeters(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371000;
+  const x = (lon2 - lon1) * Math.PI / 180 * Math.cos((lat1 + lat2) / 2 * Math.PI / 180);
+  const y = (lat2 - lat1) * Math.PI / 180;
+  return Math.sqrt(x * x + y * y) * R;
+}
+
+interface TimingDetail {
+  time: string;
+  isAtInterchange: boolean;
+  isOneStopAway: boolean;
+}
 
 interface BusTimingInfo {
   busNo: string;
-  timings: string[];
+  timings: TimingDetail[];
 }
 
 interface StopData {
@@ -66,24 +84,36 @@ export default function App() {
       
       const source = payload.source;
       const apiData = payload.data;
-      const busDataMap: Record<string, string[]> = {};
+      const busDataMap: Record<string, TimingDetail[]> = {};
 
       if (source === 'LTA') {
         const services = apiData.Services || [];
         services.forEach((s: any) => {
           const busNo = s.ServiceNo;
-          const timings: string[] = [];
+          const timings: TimingDetail[] = [];
           
           const now = new Date();
           const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
           const sgtNow = new Date(utcNow + (3600000 * 8));
 
           ['NextBus', 'NextBus2', 'NextBus3'].forEach((key) => {
-            const arrivalStr = s[key]?.EstimatedArrival;
+            const b = s[key];
+            const arrivalStr = b?.EstimatedArrival;
             if (arrivalStr) {
               const arrivalDt = new Date(arrivalStr);
               const diffMins = Math.floor((arrivalDt.getTime() - sgtNow.getTime()) / 60000);
-              timings.push(diffMins <= 0 ? 'Arr' : `${diffMins}m`);
+              const time = diffMins <= 0 ? 'Arr' : `${diffMins}m`;
+              
+              const latVal = parseFloat(b?.Latitude || '0');
+              const lonVal = parseFloat(b?.Longitude || '0');
+              const isAtInterchange = latVal === 0 && lonVal === 0;
+              let isOneStopAway = false;
+              if (!isAtInterchange && latVal && lonVal && stop.lat && stop.lon) {
+                const dist = getDistanceMeters(latVal, lonVal, stop.lat, stop.lon);
+                isOneStopAway = dist >= 300 && dist <= 1000;
+              }
+              
+              timings.push({ time, isAtInterchange, isOneStopAway });
             }
           });
           busDataMap[busNo] = timings;
@@ -93,11 +123,23 @@ export default function App() {
         const services = apiData.services || [];
         services.forEach((s: any) => {
           const busNo = s.no;
-          const timings: string[] = [];
+          const timings: TimingDetail[] = [];
           ['next', 'next2', 'next3'].forEach((key) => {
-            if (s[key] && typeof s[key].duration_ms === 'number') {
-              const mins = Math.floor(s[key].duration_ms / 60000);
-              timings.push(mins <= 0 ? 'Arr' : `${mins}m`);
+            const b = s[key];
+            if (b && typeof b.duration_ms === 'number') {
+              const mins = Math.floor(b.duration_ms / 60000);
+              const time = mins <= 0 ? 'Arr' : `${mins}m`;
+              
+              const latVal = b.lat;
+              const lonVal = b.lng;
+              const isAtInterchange = latVal === 0 && lonVal === 0;
+              let isOneStopAway = false;
+              if (!isAtInterchange && latVal && lonVal && stop.lat && stop.lon) {
+                const dist = getDistanceMeters(latVal, lonVal, stop.lat, stop.lon);
+                isOneStopAway = dist >= 300 && dist <= 1000;
+              }
+              
+              timings.push({ time, isAtInterchange, isOneStopAway });
             }
           });
           busDataMap[busNo] = timings;
@@ -109,8 +151,8 @@ export default function App() {
       
       const buses: BusTimingInfo[] = allBusNumbers
         .filter((busNo) => {
-          // If UIC Bldg or Bukit Batok Rd stops, only show target commute buses to prevent clutter
-          if (['03129', '43759', '43751'].includes(stop.id)) return stop.guaranteed.includes(busNo);
+          // If commute stops, only show target commute buses to prevent clutter
+          if (['03129', '43759', '43751', '01519', '28349'].includes(stop.id)) return stop.guaranteed.includes(busNo);
           return true;
         })
         .map((busNo) => ({
@@ -350,8 +392,8 @@ export default function App() {
                         {/* Timing Indicators */}
                         <div className="flex items-center gap-2">
                           {bus.timings.length > 0 ? (
-                            bus.timings.map((time, idx) => {
-                              const mins = time === 'Arr' ? 0 : parseInt(time) || 0;
+                            bus.timings.map((t, idx) => {
+                              const mins = t.time === 'Arr' ? 0 : parseInt(t.time) || 0;
                               const leaveMins = mins - stop.walkTime;
                               
                               let leaveText = '';
@@ -370,20 +412,49 @@ export default function App() {
                               return (
                                 <div key={idx} className="flex flex-col items-center gap-1">
                                   <div
-                                    className={`px-3 py-1.5 rounded-md font-mono text-sm font-bold flex items-center gap-1 shadow-inner border transition ${
+                                    className={`px-3 py-1.5 rounded-md font-mono text-sm font-bold flex items-center gap-1.5 shadow-inner border transition ${
                                       idx === 0
-                                        ? time === 'Arr'
+                                        ? t.time === 'Arr'
                                           ? 'bg-emerald-600/20 text-emerald-400 border-emerald-500/30 animate-pulse'
                                           : 'bg-brand-500/20 text-brand-300 border-brand-500/30'
                                         : 'bg-slate-800/60 text-slate-400 border-slate-800'
                                     }`}
                                   >
                                     <Clock className="w-3.5 h-3.5 opacity-75" />
-                                    {time}
+                                    <span>{t.time}</span>
+                                    
+                                    {/* Interchange Icon */}
+                                    {t.isAtInterchange && (
+                                      <span className="text-amber-400 text-xs ml-0.5" title="Still at Interchange">
+                                        🏠
+                                      </span>
+                                    )}
+                                    
+                                    {/* One Stop Away Indicator */}
+                                    {t.isOneStopAway && (
+                                      <span className="relative flex h-2 w-2 ml-0.5" title="One stop away!">
+                                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                                        <span className="relative inline-flex rounded-full h-2 w-2 bg-sky-500"></span>
+                                      </span>
+                                    )}
                                   </div>
-                                  <span className={`text-[10px] font-mono tracking-wider uppercase ${leaveColor}`}>
-                                    {leaveText}
-                                  </span>
+                                  
+                                  {/* Sub-texts including status */}
+                                  <div className="flex flex-col items-center gap-0.5">
+                                    <span className={`text-[10px] font-mono tracking-wider uppercase ${leaveColor}`}>
+                                      {leaveText}
+                                    </span>
+                                    {t.isAtInterchange && (
+                                      <span className="text-[8px] text-amber-500/80 font-semibold uppercase tracking-tight">
+                                        At Interchange
+                                      </span>
+                                    )}
+                                    {t.isOneStopAway && (
+                                      <span className="text-[8px] text-sky-400/90 font-bold uppercase tracking-tight animate-pulse">
+                                        1 Stop Away
+                                      </span>
+                                    )}
+                                  </div>
                                 </div>
                               );
                             })
