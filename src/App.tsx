@@ -7,26 +7,27 @@ interface BusStop {
   roadName: string;
   type: 'morning' | 'evening' | 'both';
   guaranteed: string[];
+  walkTime: number;
 }
 
 const STOPS: BusStop[] = [
-  { id: '40381', name: 'Blk 111', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['870', '871', '992'] },
-  { id: '40389', name: 'Tengah CC', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['452', '674', '871', '992'] },
-  { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'] },
-  { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'] },
-  { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'] },
-  { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'] },
-  { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'] },
+  { id: '40381', name: 'Blk 111', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['870', '871', '992'], walkTime: 3 },
+  { id: '40389', name: 'Tengah CC', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['452', '674', '871', '992'], walkTime: 5 },
+  { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'], walkTime: 4 },
+  { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'], walkTime: 4 },
+  { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'], walkTime: 2 },
+  { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 8 },
+  { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 8 },
 ];
 
-interface BusTiming {
-  time: string;
-  load: string;
+interface Timing {
+  mins: number | 'Arr';
+  load?: string; // SEA, SDA, LSD
 }
 
 interface BusTimingInfo {
   busNo: string;
-  timings: BusTiming[];
+  timings: Timing[];
 }
 
 interface StopData {
@@ -89,13 +90,13 @@ export default function App() {
       
       const source = payload.source;
       const apiData = payload.data;
-      const busDataMap: Record<string, BusTiming[]> = {};
+      const busDataMap: Record<string, Timing[]> = {};
 
       if (source === 'LTA') {
         const services = apiData.Services || [];
         services.forEach((s: any) => {
           const busNo = s.ServiceNo;
-          const timings: BusTiming[] = [];
+          const timings: Timing[] = [];
           
           const now = new Date();
           const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
@@ -103,31 +104,31 @@ export default function App() {
 
           ['NextBus', 'NextBus2', 'NextBus3'].forEach((key) => {
             const arrivalStr = s[key]?.EstimatedArrival;
-            const load = s[key]?.Load || 'SEA';
+            const load = s[key]?.Load; // SEA, SDA, LSD
             if (arrivalStr) {
               const arrivalDt = new Date(arrivalStr);
               const diffMins = Math.floor((arrivalDt.getTime() - sgtNow.getTime()) / 60000);
-              timings.push({ time: diffMins <= 0 ? 'Arr' : `${diffMins}m`, load });
+              timings.push({ mins: diffMins <= 0 ? 'Arr' : diffMins, load });
             }
           });
           busDataMap[busNo] = timings;
         });
       } else {
+        // ArriveLah parsing
         const services = apiData.services || [];
         services.forEach((s: any) => {
           const busNo = s.no;
-          const timings: BusTiming[] = [];
+          const timings: Timing[] = [];
           ['next', 'next2', 'next3'].forEach((key) => {
             if (s[key] && typeof s[key].duration_ms === 'number') {
               const mins = Math.floor(s[key].duration_ms / 60000);
-              const load = s[key]?.load || 'SEA';
-              timings.push({ time: mins <= 0 ? 'Arr' : `${mins}m`, load });
+              const load = s[key].load; 
+              timings.push({ mins: mins <= 0 ? 'Arr' : mins, load });
             }
           });
           busDataMap[busNo] = timings;
         });
       }
-
       const allBusNumbers = Array.from(new Set([...stop.guaranteed, ...Object.keys(busDataMap)])).sort();
       
       const buses: BusTimingInfo[] = allBusNumbers
@@ -323,9 +324,9 @@ export default function App() {
                         </h3>
                         <div className="flex items-center gap-2 mt-0.5">
                           <p className="text-xs text-slate-500 dark:text-slate-400">{stop.roadName}</p>
-                          {stop.id === '40389' && (
+                          {stop.walkTime > 0 && (
                             <span className="text-[10px] bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 px-1.5 py-0.5 rounded flex items-center gap-1 font-medium border border-slate-300 dark:border-slate-700">
-                              <Footprints className="w-3 h-3" /> 5m walk
+                              <Footprints className="w-3 h-3" /> {stop.walkTime}m walk
                             </span>
                           )}
                         </div>
@@ -390,29 +391,39 @@ export default function App() {
                         <div className="flex flex-wrap items-center gap-2">
                           {bus.timings.length > 0 ? (
                             bus.timings.map((t, idx) => {
-                              const isArr = t.time === 'Arr';
+                              const isArr = t.mins === 'Arr';
+                              const displayTime = isArr ? 'Arr' : `${t.mins}m`;
+                              const timeToLeave = isArr ? null : (t.mins as number) - stop.walkTime;
+                              const isLeavingNow = typeof timeToLeave === 'number' && timeToLeave >= 0 && timeToLeave <= 2;
                               const crowdColorClass = 
-                                t.load === 'LSD' ? 'bg-rose-500 dark:bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 
-                                t.load === 'SDA' ? 'bg-amber-500 dark:bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 
-                                'bg-emerald-500 dark:bg-emerald-500';
+                                t.load === 'LSD' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 
+                                t.load === 'SDA' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 
+                                'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]';
 
                               return (
                                 <div
                                   key={idx}
-                                  className={`px-3 py-1.5 rounded-md font-mono text-sm font-bold flex items-center gap-2 shadow-sm border transition ${
+                                  className={`relative px-3 py-1.5 rounded-md font-mono text-sm font-bold flex items-center gap-2 shadow-sm border transition ${
                                     idx === 0
                                       ? isArr
                                         ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-600/20 dark:text-emerald-400 dark:border-emerald-500/30 animate-pulse'
-                                        : 'bg-brand-50 text-brand-700 border-brand-200 dark:bg-brand-500/20 dark:text-brand-300 dark:border-brand-500/30'
+                                        : isLeavingNow
+                                          ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-600/20 dark:text-rose-400 dark:border-rose-500/30 animate-pulse'
+                                          : 'bg-brand-50 text-brand-700 border-brand-200 dark:bg-brand-500/20 dark:text-brand-300 dark:border-brand-500/30'
                                       : 'bg-white text-slate-600 border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-800'
                                   }`}
                                 >
+                                  {idx === 0 && isLeavingNow && (
+                                    <div className="absolute -top-2.5 -right-2 bg-rose-500 text-white text-[9px] px-1.5 py-0.5 rounded shadow-sm border border-rose-600 tracking-wider">
+                                      LEAVE NOW
+                                    </div>
+                                  )}
                                   <div className="flex items-center gap-1.5">
                                     <Clock className="w-3.5 h-3.5 opacity-75" />
-                                    {t.time}
+                                    {displayTime}
                                   </div>
-                                  <div className={`flex items-center border-l pl-2 ${idx === 0 ? (isArr ? 'border-emerald-200 dark:border-emerald-500/30' : 'border-brand-200 dark:border-brand-500/30') : 'border-slate-200 dark:border-slate-700'}`}>
-                                    <div className="flex items-center gap-1 opacity-90" title={`Crowd level: ${t.load}`}>
+                                  <div className={`flex items-center border-l pl-2 ${idx === 0 ? (isArr ? 'border-emerald-200 dark:border-emerald-500/30' : isLeavingNow ? 'border-rose-200 dark:border-rose-500/30' : 'border-brand-200 dark:border-brand-500/30') : 'border-slate-200 dark:border-slate-700'}`}>
+                                    <div className="flex items-center gap-1 opacity-90" title={`Crowd level: ${t.load === 'LSD' ? 'Crowded' : t.load === 'SDA' ? 'Standing' : 'Seats Available'}`}>
                                       <Users className="w-3 h-3" />
                                       <div className={`w-2 h-2 rounded-full ${crowdColorClass}`} />
                                     </div>
