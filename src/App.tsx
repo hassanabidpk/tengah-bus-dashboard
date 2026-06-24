@@ -41,40 +41,26 @@ interface StopData {
 }
 
 // Vintage London Bus Inspired SVGs
-const SingleDeckerIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 15V9a1.5 1.5 0 0 1 1.5-1.5h12.5a2.5 2.5 0 0 1 2.5 2.5V15" />
-    <path d="M19.5 15h1a1 1 0 0 1 1 1v1h-3.5v-2z" strokeWidth="1.8" />
-    <path d="M3 15h16.5" />
-    <path d="M3 15H1.5a0.5 0 0 0-.5.5v1h2v-1.5z" />
-    <rect x="5.5" y="10" width="3" height="3" rx="0.5" />
-    <rect x="10" y="10" width="3" height="3" rx="0.5" />
-    <rect x="14.5" y="10" width="2.5" height="3" rx="0.5" />
-    <circle cx="6.5" cy="17.5" r="1.5" />
-    <circle cx="15.5" cy="17.5" r="1.5" />
-  </svg>
-);
-
 const DoubleDeckerIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
-  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} strokeLinecap="round" strokeLinejoin="round">
-    <path d="M3 15V5a1.5 1.5 0 0 1 1.5-1.5h12.5a2.5 2.5 0 0 1 2.5 2.5V15" />
-    <path d="M19.5 15h1a1 1 0 0 1 1 1v1h-3.5v-2z" strokeWidth="1.8" />
-    <path d="M3 15h16.5" />
-    <path d="M3 15H1.5a0.5 0 0 0-.5.5v1h2v-1.5z" />
-    <path d="M3 9.5h16.5" />
-    <rect x="5.5" y="5.5" width="3" height="2.5" rx="0.5" />
-    <rect x="10" y="5.5" width="3" height="2.5" rx="0.5" />
-    <rect x="14.5" y="5.5" width="2.5" height="2.5" rx="0.5" />
-    <rect x="5.5" y="11" width="3" height="2.5" rx="0.5" />
-    <rect x="10" y="11" width="3" height="2.5" rx="0.5" />
-    <rect x="14.5" y="11" width="2.5" height="2.5" rx="0.5" />
-    <circle cx="6.5" cy="17.5" r="1.5" />
-    <circle cx="15.5" cy="17.5" r="1.5" />
+  <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className} strokeLinecap="round" strokeLinejoin="round">
+    {/* Body */}
+    <path d="M2.5 16V4.5A1.5 1.5 0 0 1 4 3h15a2 2 0 0 1 2 2v11h1.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2.5a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z" />
+    {/* Mid divider */}
+    <path d="M2 10h19" />
+    {/* Upper Windows */}
+    <path d="M5 5.5h2.5v2.5H5zM9.5 5.5h3v2.5h-3zM14.5 5.5h3v2.5h-3z" />
+    {/* Lower Windows */}
+    <path d="M9.5 12h3v2.5h-3zM14.5 12h3v2.5h-3z" />
+    {/* Open platform / door at the back (left side is back) */}
+    <path d="M4 12h3v4H4z" />
+    {/* Wheels */}
+    <circle cx="7.5" cy="18.5" r="1.5" />
+    <circle cx="16.5" cy="18.5" r="1.5" />
   </svg>
 );
 
 const BendyBusIcon = ({ className = "w-4 h-3.5" }: { className?: string }) => (
-  <svg viewBox="0 0 28 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} strokeLinecap="round" strokeLinejoin="round">
+  <svg viewBox="0 0 28 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className} strokeLinecap="round" strokeLinejoin="round">
     <rect x="2" y="8" width="10" height="8" rx="1" />
     <rect x="16" y="8" width="10" height="8" rx="1" />
     <path d="M12 9l2-1v10l-2-1M12 11l2-1v4l-2-1M14 8h2M14 16h2" />
@@ -421,16 +407,7 @@ export default function App() {
                           >
                             {bus.busNo}
                           </div>
-                          <div className="hidden min-[380px]:block">
-                            <span className="font-semibold text-slate-800 dark:text-slate-200 text-xs sm:text-sm whitespace-nowrap">
-                              Bus {bus.busNo}
-                            </span>
-                            {isTargetBus && (
-                              <span className="block text-[9px] sm:text-[10px] text-brand-600 dark:text-brand-400 font-medium leading-none mt-0.5">
-                                Active Route
-                              </span>
-                            )}
-                          </div>
+                          {/* Text Removed to save space on mobile */}
                         </div>
 
                         {/* Timing Indicators - Horizontally aligned and scroll-prevented */}
@@ -481,19 +458,19 @@ export default function App() {
                                       <div className={`w-2 h-2 rounded-full ${crowdColorClass}`} />
                                     </div>
 
-                                    {/* London Bus Type Icon */}
-                                    <div 
-                                      className="flex items-center text-slate-500 dark:text-slate-400 flex-shrink-0" 
-                                      title={t.type === 'DD' ? 'London-style Double Decker' : t.type === 'BD' ? 'Bendy Bus' : 'London-style Single Decker'}
-                                    >
-                                      {t.type === 'DD' ? (
-                                        <DoubleDeckerIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-600 dark:text-brand-400" />
-                                      ) : t.type === 'BD' ? (
-                                        <BendyBusIcon className="w-4 h-3.5 sm:w-4.5 sm:h-4 text-amber-600 dark:text-amber-400" />
-                                      ) : (
-                                        <SingleDeckerIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 dark:text-slate-400" />
-                                      )}
-                                    </div>
+                                    {/* London Bus Type Icon - Skip for SD */}
+                                    {t.type !== 'SD' && t.type !== undefined && (
+                                      <div 
+                                        className="flex items-center text-slate-500 dark:text-slate-400 flex-shrink-0" 
+                                        title={t.type === 'DD' ? 'London-style Double Decker' : 'Bendy Bus'}
+                                      >
+                                        {t.type === 'DD' ? (
+                                          <DoubleDeckerIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-600 dark:text-brand-400" />
+                                        ) : (
+                                          <BendyBusIcon className="w-4 h-3.5 sm:w-4.5 sm:h-4 text-amber-600 dark:text-amber-400" />
+                                        )}
+                                      </div>
+                                    )}
                                   </div>
                                 </div>
                               );
