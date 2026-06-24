@@ -305,29 +305,29 @@ export default function App() {
 
   return (
     <div className="min-h-screen bg-white text-slate-950 dark:bg-[#090a0b] dark:text-slate-100">
-      <div className="relative mx-auto max-w-7xl px-4 py-4 sm:px-6 sm:py-8">
-        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+      <div className="relative mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-8">
+        <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
             <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/20 bg-slate-900/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-200 shadow-lg shadow-brand-500/10 backdrop-blur sm:text-xs">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               Tengah Commute Tracker
             </div>
 
-            <div className="mt-4 space-y-2">
-              <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-4xl md:text-5xl">
+            <div className="mt-3 space-y-1.5 sm:mt-4 sm:space-y-2">
+              <h1 className="text-2xl font-black leading-[1.05] tracking-[-0.045em] text-slate-950 dark:text-white sm:text-4xl md:text-5xl">
                 Plantation Cres Live Board
               </h1>
-              <p className="max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">
+              <p className="max-w-2xl text-[13px] leading-5 text-slate-600 dark:text-slate-400 sm:text-base sm:leading-relaxed">
                 A polished, live bus dashboard for Tengah residents — tuned for quick morning decisions, evening returns, and everything in between.
               </p>
             </div>
           </div>
 
           <div className="flex flex-col items-start gap-2 sm:items-end">
-            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/80 p-2 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
+            <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 sm:flex sm:w-auto sm:flex-wrap sm:p-2">
               <button
                 onClick={() => setIsAutoRefresh(!isAutoRefresh)}
-                className={`rounded-xl px-3 py-2 text-xs font-semibold transition sm:text-sm ${
+                className={`min-h-11 rounded-xl px-3 py-2 text-xs font-semibold transition sm:min-h-0 sm:text-sm ${
                   isAutoRefresh
                     ? 'border border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400 dark:hover:bg-slate-900'
@@ -339,7 +339,7 @@ export default function App() {
               <button
                 onClick={refreshAll}
                 disabled={refreshing}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-900"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-900 sm:min-h-0 sm:min-w-0"
                 title="Refresh now"
               >
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin text-brand-500 dark:text-brand-400' : ''}`} />
@@ -347,14 +347,14 @@ export default function App() {
 
               <button
                 onClick={() => setIsDark(!isDark)}
-                className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-900"
+                className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-900 sm:min-h-0 sm:min-w-0"
                 title="Toggle dark mode"
               >
                 {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 sm:gap-2 sm:text-xs">
               <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1 font-medium shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/60">
                 {liveStatusLabel}
               </span>
@@ -365,22 +365,22 @@ export default function App() {
           </div>
         </header>
 
-        <section className="mb-6 flex flex-col gap-3 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <section className="mb-4 flex flex-col gap-2 rounded-3xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:p-4">
           <div>
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+            <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
               Pages
             </p>
-            <h2 className="mt-1 text-sm font-semibold text-slate-950 dark:text-white sm:text-base">
-              {viewMode === 'board' ? 'Live bus board' : 'Live stops and information services'}
+            <h2 className="mt-1 text-base font-black leading-tight tracking-[-0.02em] text-slate-950 dark:text-white sm:text-base">
+              {viewMode === 'board' ? 'Live bus board' : 'Stops and information'}
             </h2>
           </div>
 
-          <div className="grid w-full grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950 sm:inline-flex sm:w-auto sm:grid-cols-none sm:rounded-full">
+          <div className="grid w-full grid-cols-2 gap-1 rounded-3xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950 sm:inline-flex sm:w-auto sm:grid-cols-none sm:rounded-full">
             <button
               type="button"
               aria-pressed={viewMode === 'board'}
               onClick={() => setViewMode('board')}
-              className={`min-h-11 rounded-xl px-4 py-2.5 text-xs font-semibold transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 sm:text-sm ${
+              className={`min-h-12 rounded-2xl px-4 py-3 text-sm font-bold transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 ${
                 viewMode === 'board'
                   ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-950'
                   : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
@@ -392,7 +392,7 @@ export default function App() {
               type="button"
               aria-pressed={viewMode === 'info'}
               onClick={() => setViewMode('info')}
-              className={`min-h-11 rounded-xl px-4 py-2.5 text-xs font-semibold transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 sm:text-sm ${
+              className={`min-h-12 rounded-2xl px-4 py-3 text-sm font-bold transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 ${
                 viewMode === 'info'
                   ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-950'
                   : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
@@ -403,19 +403,19 @@ export default function App() {
           </div>
         </section>
 
-        <section className={viewMode === 'info' ? 'mb-6 grid gap-4 lg:grid-cols-[1.05fr_0.95fr]' : 'hidden'}>
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+        <section className={viewMode === 'info' ? 'mb-5 grid gap-3 sm:gap-4 lg:grid-cols-[1.05fr_0.95fr]' : 'hidden'}>
+          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+            <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
               Info page
             </p>
-            <h3 className="mt-2 text-2xl font-semibold tracking-[-0.04em] text-slate-950 dark:text-white">
+            <h3 className="mt-2 text-xl font-black leading-tight tracking-[-0.04em] text-slate-950 dark:text-white sm:text-2xl">
               Live stops and service signals
             </h3>
-            <p className="mt-2 max-w-xl text-sm leading-6 text-slate-600 dark:text-slate-400">
+            <p className="mt-2 max-w-xl text-[13px] leading-5 text-slate-600 dark:text-slate-400 sm:text-sm sm:leading-6">
               {modeMeta.description}
             </p>
 
-            <div className="mt-4 flex flex-wrap items-center gap-2 text-[11px] text-slate-500 dark:text-slate-400">
+            <div className="mt-3 flex flex-wrap items-center gap-1.5 text-[11px] text-slate-500 dark:text-slate-400 sm:mt-4 sm:gap-2">
               <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 font-medium dark:border-slate-800 dark:bg-slate-950">
                 {sourceSummary}
               </span>
@@ -427,24 +427,24 @@ export default function App() {
               </span>
             </div>
 
-            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
+            <div className="mt-4 rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:mt-5 sm:p-4">
+              <div className="flex items-center gap-2 text-[11px] font-bold uppercase tracking-[0.22em] text-slate-500 dark:text-slate-400 sm:text-xs">
                 <Sparkles className="h-3.5 w-3.5" />
                 Smart route guidance
               </div>
-              <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+              <p className="mt-2 text-[13px] leading-5 text-slate-700 dark:text-slate-300 sm:text-sm sm:leading-relaxed">
                 {routeMessage}
               </p>
             </div>
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Live overview
               </p>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">{liveStopCount}</span>
+                <span className="text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">{liveStopCount}</span>
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">/{filteredStops.length} visible</span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
@@ -452,12 +452,12 @@ export default function App() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Service counts
               </p>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">{liveServiceCount}</span>
+                <span className="text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">{liveServiceCount}</span>
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">tracked routes</span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
@@ -465,12 +465,12 @@ export default function App() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Next departure
               </p>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">{nextDepartureLabel}</span>
+                <span className="text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">{nextDepartureLabel}</span>
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">fastest pull</span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
@@ -478,12 +478,12 @@ export default function App() {
               </p>
             </div>
 
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Refresh cadence
               </p>
               <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">{isAutoRefresh ? '30s' : 'Paused'}</span>
+                <span className="text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">{isAutoRefresh ? '30s' : 'Paused'}</span>
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">live sync</span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
@@ -511,7 +511,7 @@ export default function App() {
               {visibleStopData.map((stopData) => {
                 const stop = STOPS.find((entry) => entry.id === stopData.stopCode);
                 return (
-                  <div key={stopData.stopCode} className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
+                  <div key={stopData.stopCode} className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-slate-950 dark:text-white">{stopData.name}</p>
@@ -541,24 +541,24 @@ export default function App() {
           </div>
         </section>
 
-        <section className={viewMode === 'board' ? 'mt-6 mb-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-4' : 'hidden'}>
-          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+        <section className={viewMode === 'board' ? 'mb-4 rounded-3xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:p-4' : 'hidden'}>
+          <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+              <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
                 Mode
               </p>
-              <h3 className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 sm:text-base">
+              <h3 className="mt-1 text-base font-black leading-tight tracking-[-0.02em] text-slate-900 dark:text-slate-100 sm:text-base">
                 {modeMeta.status}
               </h3>
-              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 sm:text-sm">
+              <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400 sm:text-sm">
                 Switch between morning, evening, or the full route view.
               </p>
             </div>
 
-            <div className="flex w-full flex-wrap gap-2 lg:w-auto">
+            <div className="grid w-full grid-cols-3 gap-1.5 lg:w-auto lg:min-w-[25rem]">
               <button
                 onClick={() => setActiveTab('morning')}
-                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
+                className={`min-h-11 rounded-2xl px-2 py-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${
                   activeTab === 'morning'
                     ? 'border border-amber-200 bg-amber-100 text-amber-700 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
@@ -569,7 +569,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => setActiveTab('evening')}
-                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
+                className={`min-h-11 rounded-2xl px-2 py-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${
                   activeTab === 'evening'
                     ? 'border border-indigo-200 bg-indigo-100 text-indigo-700 shadow-sm dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
@@ -580,7 +580,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => setActiveTab('all')}
-                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
+                className={`min-h-11 rounded-2xl px-2 py-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${
                   activeTab === 'all'
                     ? 'border border-slate-700 bg-slate-800 text-white shadow-sm'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
@@ -600,28 +600,28 @@ export default function App() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-3 sm:gap-5 lg:grid-cols-2">
             {filteredStops.map((stop) => {
               const stopData = data[stop.id];
 
               return (
                 <div
                   key={stop.id}
-                  className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 shadow-2xl shadow-slate-950/5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-slate-950/10 dark:border-slate-800 dark:bg-slate-900/55 dark:hover:border-slate-700 dark:hover:shadow-slate-950/25"
+                  className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 shadow-lg shadow-slate-950/5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-slate-950/10 dark:border-slate-800 dark:bg-slate-900/65 dark:hover:border-slate-700 dark:hover:shadow-slate-950/25 sm:shadow-2xl"
                 >
                   <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stopAccentClass(stop.type)}`} />
 
-                  <div className="flex flex-col gap-4 border-b border-slate-100 px-4 py-4 dark:border-slate-800 sm:px-5 sm:py-5 lg:flex-row lg:items-center lg:justify-between">
-                    <div className="flex items-start gap-3">
-                      <div className="flex-shrink-0 rounded-2xl border border-brand-200 bg-brand-100 p-2 text-brand-600 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400">
+                  <div className="flex flex-col gap-3 border-b border-slate-100 px-3 py-3 dark:border-slate-800 sm:px-5 sm:py-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-start gap-2.5 sm:gap-3">
+                      <div className="flex-shrink-0 rounded-2xl border border-brand-200 bg-brand-100 p-1.5 text-brand-600 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400 sm:p-2">
                         <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
                       </div>
 
                       <div>
-                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 sm:px-2.5 sm:py-1 sm:text-[10px]">
                           {stopTypeLabel(stop.type)}
                         </span>
-                        <h3 className="mt-2 text-sm font-black leading-snug text-slate-950 dark:text-slate-100 sm:text-base md:text-lg">
+                        <h3 className="mt-1.5 text-[15px] font-black leading-snug tracking-[-0.02em] text-slate-950 dark:text-slate-100 sm:mt-2 sm:text-base md:text-lg">
                           {stop.name}
                         </h3>
                         <div className="mt-1 flex flex-wrap items-center gap-2">
@@ -662,13 +662,13 @@ export default function App() {
                     </div>
                   </div>
 
-                  <div className="px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
-                    <div className="mb-3 flex items-center justify-between">
+                  <div className="px-3 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+                    <div className="mb-2.5 flex items-center justify-between sm:mb-3">
                       <div>
-                        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                        <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
                           Service counts
                         </p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                        <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 sm:mt-1 sm:text-xs">
                           {stopData ? `${stopData.buses.length} tracked routes` : 'Waiting for fresh data'}
                         </p>
                       </div>
@@ -695,7 +695,7 @@ export default function App() {
                         return (
                           <div
                             key={bus.busNo}
-                            className={`flex items-center gap-1.5 rounded-2xl py-3 transition-all first:pt-0 last:pb-0 ${
+                            className={`flex items-center gap-2 rounded-2xl py-2.5 transition-all first:pt-0 last:pb-0 sm:gap-2.5 sm:py-3 ${
                               isTargetBus ? 'bg-brand-50/90 px-3 -mx-3 border border-brand-100 dark:bg-brand-500/10 dark:border-brand-500/10' : ''
                             }`}
                           >
@@ -711,7 +711,8 @@ export default function App() {
                               </div>
                             </div>
 
-                            <div className="flex max-w-full items-center gap-1 overflow-x-auto no-scrollbar pt-1 pb-1 sm:gap-1.5">
+                            <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar py-0.5">
+                              <div className="flex min-w-max items-center justify-end gap-1 sm:gap-1.5">
                               {bus.timings.length > 0 ? (
                                 bus.timings.map((t, idx) => {
                                   const isArr = t.mins === 'Arr';
@@ -728,7 +729,7 @@ export default function App() {
                                   return (
                                     <div
                                       key={idx}
-                                      className={`relative flex min-w-[2.75rem] flex-col items-center justify-center rounded-lg border px-1.5 py-1.5 font-mono shadow-sm transition sm:min-w-[3.2rem] sm:px-2 sm:py-2 ${
+                                      className={`relative flex min-w-[2.55rem] flex-col items-center justify-center rounded-lg border px-1.5 py-1.5 font-mono shadow-sm transition sm:min-w-[3.2rem] sm:px-2 sm:py-2 ${
                                         idx === 0
                                           ? isArr
                                             ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-600/20 dark:text-emerald-400'
@@ -773,7 +774,8 @@ export default function App() {
                               )}
                             </div>
                           </div>
-                        );
+                        </div>
+                      );
                       })}
 
                       {(!stopData || stopData.buses.length === 0) && (
