@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { MapPin, RefreshCw, Sun, Moon, Sparkles, Navigation, AlertTriangle, Footprints } from 'lucide-react';
+import { MapPin, RefreshCw, Sun, Moon, Sparkles, AlertTriangle, Footprints } from 'lucide-react';
 
 interface BusStop {
   id: string;
@@ -375,22 +375,26 @@ export default function App() {
             </h2>
           </div>
 
-          <div className="inline-flex rounded-full border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950">
+          <div className="grid w-full grid-cols-2 gap-1 rounded-2xl border border-slate-200 bg-slate-50 p-1 dark:border-slate-800 dark:bg-slate-950 sm:inline-flex sm:w-auto sm:grid-cols-none sm:rounded-full">
             <button
+              type="button"
+              aria-pressed={viewMode === 'board'}
               onClick={() => setViewMode('board')}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+              className={`min-h-11 rounded-xl px-4 py-2.5 text-xs font-semibold transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 sm:text-sm ${
                 viewMode === 'board'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
+                  ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-950'
                   : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
               Board
             </button>
             <button
+              type="button"
+              aria-pressed={viewMode === 'info'}
               onClick={() => setViewMode('info')}
-              className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
+              className={`min-h-11 rounded-xl px-4 py-2.5 text-xs font-semibold transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 sm:text-sm ${
                 viewMode === 'info'
-                  ? 'bg-slate-900 text-white dark:bg-white dark:text-slate-950'
+                  ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-950'
                   : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
               }`}
             >
@@ -436,23 +440,35 @@ export default function App() {
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">Live stops</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                Live overview
+              </p>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">{liveStopCount}</span>
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">/{filteredStops.length} visible</span>
               </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                Stops are filtered by the current mode and updated live from both feeds.
+              </p>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">Services</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                Service counts
+              </p>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">{liveServiceCount}</span>
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">tracked routes</span>
               </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                Combined route count currently visible on the board.
+              </p>
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">Next departure</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                Next departure
+              </p>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">{nextDepartureLabel}</span>
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">fastest pull</span>
@@ -463,7 +479,9 @@ export default function App() {
             </div>
 
             <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">Refresh cadence</p>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                Refresh cadence
+              </p>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">{isAutoRefresh ? '30s' : 'Paused'}</span>
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">live sync</span>
@@ -519,124 +537,6 @@ export default function App() {
                   </div>
                 );
               })}
-            </div>
-          </div>
-        </section>
-
-        <section className={viewMode === 'board' ? 'grid gap-4 xl:grid-cols-[1.25fr_0.75fr]' : 'hidden'}>
-          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
-            <div className="absolute inset-x-0 top-0 h-0.5 bg-slate-900/90 dark:bg-white/20" />
-
-            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-              <div className="max-w-2xl">
-                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-brand-600 dark:text-brand-400">
-                  {modeMeta.eyebrow}
-                </p>
-                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">
-                  {modeMeta.title}
-                </h2>
-                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">
-                  {modeMeta.description}
-                </p>
-              </div>
-
-              <div className="hidden h-12 w-12 items-center justify-center rounded-2xl border border-brand-500/20 bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300 sm:flex">
-                <Navigation className="h-5 w-5" />
-              </div>
-            </div>
-
-            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
-                <Sparkles className="h-3.5 w-3.5" />
-                Smart route guidance
-              </div>
-              <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
-                {routeMessage}
-              </p>
-            </div>
-
-            <div className="mt-4 flex flex-wrap items-center gap-2">
-              <span className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300 sm:text-xs">
-                {modeMeta.status}
-              </span>
-              <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-medium text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400 sm:text-xs">
-                {sourceSummary}
-              </span>
-              {lastUpdated && (
-                <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-medium text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400 sm:text-xs">
-                  Updated {lastUpdated.toLocaleTimeString()}
-                </span>
-              )}
-            </div>
-          </div>
-
-          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                Live overview
-              </p>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-                  {liveStopCount}
-                </span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  / {filteredStops.length} visible
-                </span>
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                Stops are filtered by the current mode and updated live from both feeds.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                Service counts
-              </p>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-                  {liveServiceCount}
-                </span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  tracked routes
-                </span>
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                Combined route count currently visible on the board.
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                Next departure
-              </p>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-                  {nextDepartureLabel}
-                </span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  fastest pull
-                </span>
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                {nextDeparture ? `${nextDeparture.busNo} · ${nextDeparture.stopName}` : 'Waiting for fresh data.'}
-              </p>
-            </div>
-
-            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                Refresh cadence
-              </p>
-              <div className="mt-3 flex items-baseline gap-2">
-                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
-                  {isAutoRefresh ? '30s' : 'Paused'}
-                </span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
-                  live sync
-                </span>
-              </div>
-              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                {isAutoRefresh ? 'The board refreshes in the background.' : 'Manual refresh is enabled.'}
-              </p>
             </div>
           </div>
         </section>
