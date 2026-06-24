@@ -220,271 +220,521 @@ export default function App() {
     };
   }, [isAutoRefresh, refreshAll]);
 
-  const filteredStops = STOPS.filter(stop => {
+  const filteredStops = STOPS.filter((stop) => {
     if (activeTab === 'all') return true;
     return stop.type === activeTab || stop.type === 'both';
   });
 
+  const visibleStopData = filteredStops
+    .map((stop) => data[stop.id])
+    .filter((stopData): stopData is StopData => Boolean(stopData));
+
+  const liveStopCount = visibleStopData.length;
+  const liveServiceCount = visibleStopData.reduce((total, stopData) => total + stopData.buses.length, 0);
+
+  const nextDeparture = visibleStopData.reduce<{
+    mins: number;
+    busNo: string;
+    stopName: string;
+  } | null>((best, stopData) => {
+    stopData.buses.forEach((bus) => {
+      const firstTiming = bus.timings[0];
+      if (!firstTiming) return;
+
+      const mins = firstTiming.mins === 'Arr' ? 0 : firstTiming.mins;
+      if (!best || mins < best.mins) {
+        best = {
+          mins,
+          busNo: bus.busNo,
+          stopName: stopData.name,
+        };
+      }
+    });
+
+    return best;
+  }, null);
+
+  const sourceSummary = visibleStopData.length
+    ? Array.from(new Set(visibleStopData.map((stopData) => stopData.source))).join(' · ')
+    : 'Waiting for live feeds';
+
+  const modeMeta = {
+    all: {
+      eyebrow: 'System overview',
+      title: 'All stops at a glance',
+      description: 'A calm, at-a-glance overview of every saved stop and the live services currently reporting.',
+      status: 'Broadcast mode',
+    },
+    morning: {
+      eyebrow: 'Morning wave',
+      title: 'Plan the commute before you leave',
+      description: 'Focus on the routes that matter for the morning run toward MRT links and the fastest feed in each stop.',
+      status: 'Peak flow',
+    },
+    evening: {
+      eyebrow: 'Evening return',
+      title: 'Keep the ride home in view',
+      description: 'Track the return pattern back to Tengah with enough buffer to make the right feeder without rushing.',
+      status: 'Homebound',
+    },
+  }[activeTab];
+
+  const routeMessage =
+    activeTab === 'morning'
+      ? '🌅 Morning Commute is active! Take Bus 452 to Beauty World MRT, or take Bus 872 to Chinese Garden MRT.'
+      : activeTab === 'evening'
+        ? '🌇 Evening Return is active! Board Bus 674 from UIC Building, or take Bus 872 from Chinese Garden MRT back to Tengah.'
+        : '🚇 Ready for your commute? Toggle Morning or Evening modes to focus on specific routes, stops, and timings.';
+
+  const liveStatusLabel = loading ? 'Syncing live feeds' : refreshing ? 'Refreshing network' : isAutoRefresh ? 'Auto-refresh live' : 'Manual refresh';
+  const nextDepartureLabel = nextDeparture ? (nextDeparture.mins === 0 ? 'Arr' : `${nextDeparture.mins}m`) : '—';
+  const lastUpdatedLabel = lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Awaiting first refresh';
+
+  const stopAccentClass = (stopType: BusStop['type']) => {
+    if (stopType === 'morning') return 'from-amber-400 via-orange-400 to-brand-500';
+    if (stopType === 'evening') return 'from-indigo-400 via-violet-400 to-brand-500';
+    return 'from-cyan-400 via-sky-400 to-emerald-400';
+  };
+
+  const stopTypeLabel = (stopType: BusStop['type']) => {
+    if (stopType === 'morning') return 'Morning route';
+    if (stopType === 'evening') return 'Evening route';
+    return 'Shared stop';
+  };
+
   return (
-    <div className="max-w-5xl mx-auto px-3 sm:px-4 py-4 sm:py-8">
-      {/* Header */}
-      <header className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-6 sm:mb-8">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="bg-brand-100 text-brand-700 border-brand-200 dark:bg-brand-600/20 dark:text-brand-400 dark:border-brand-500/20 text-[10px] sm:text-xs px-2 py-0.5 sm:px-2.5 sm:py-1 rounded-full font-semibold uppercase tracking-wider flex items-center gap-1 border">
-              <Sparkles className="w-3 h-3 sm:w-3.5 sm:h-3.5" /> Tengah Commute Tracker
-            </span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 dark:text-transparent dark:bg-gradient-to-r dark:from-white dark:via-slate-200 dark:to-slate-400 dark:bg-clip-text">
-            Plantation Cres Live Board
-          </h1>
-          <p className="text-slate-600 dark:text-slate-400 text-xs sm:text-sm mt-1">
-            Real-time bus timings. Sourced from LTA & ArriveLah.
-          </p>
-        </div>
-
-        {/* Global Controls */}
-        <div className="flex flex-wrap items-center gap-2 sm:gap-3 w-full md:w-auto justify-between sm:justify-start">
-          <div className="bg-white border border-slate-200 shadow-sm dark:bg-slate-900 dark:border-slate-800 rounded-lg p-1 flex items-center gap-1">
-            <button
-              onClick={() => setIsAutoRefresh(!isAutoRefresh)}
-              className={`text-[10px] sm:text-xs px-2.5 py-1 sm:px-3 sm:py-1.5 rounded-md font-medium transition ${
-                isAutoRefresh
-                  ? 'bg-emerald-100 text-emerald-700 border border-emerald-200 dark:bg-emerald-600/20 dark:text-emerald-400 dark:border-emerald-500/20'
-                  : 'text-slate-500 hover:text-slate-800 dark:text-slate-400 dark:hover:text-white'
-              }`}
-            >
-              {isAutoRefresh ? 'Auto On' : 'Auto Off'}
-            </button>
-            <button
-              onClick={refreshAll}
-              disabled={refreshing}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 p-1.5 rounded-md transition disabled:opacity-50"
-            >
-              <RefreshCw className={`w-3.5 h-3.5 sm:w-4 sm:h-4 ${refreshing ? 'animate-spin text-brand-500 dark:text-brand-400' : ''}`} />
-            </button>
-            <div className="w-px h-5 sm:h-6 bg-slate-200 dark:bg-slate-700 mx-1"></div>
-            <button
-              onClick={() => setIsDark(!isDark)}
-              className="bg-slate-100 hover:bg-slate-200 text-slate-700 dark:bg-slate-800 dark:hover:bg-slate-700 dark:text-slate-100 p-1.5 rounded-md transition"
-              title="Toggle Dark Mode"
-            >
-              {isDark ? <Sun className="w-3.5 h-3.5 sm:w-4 sm:h-4" /> : <Moon className="w-3.5 h-3.5 sm:w-4 sm:h-4" />}
-            </button>
-          </div>
-          {lastUpdated && (
-            <span className="text-[10px] sm:text-xs text-slate-500 font-mono">
-              Updated: {lastUpdated.toLocaleTimeString()}
-            </span>
-          )}
-        </div>
-      </header>
-
-      {/* Commuter Recommendation HUD */}
-      <div className="mb-6 sm:mb-8 bg-white dark:bg-gradient-to-br dark:from-slate-900 dark:to-slate-950 border border-slate-200 dark:border-slate-800 rounded-xl p-4 sm:p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 shadow-md dark:shadow-xl">
-        <div className="flex items-start gap-3">
-          <div className="bg-brand-100 dark:bg-brand-600/10 p-2 sm:p-2.5 rounded-lg border border-brand-200 dark:border-brand-500/20 text-brand-600 dark:text-brand-400 mt-0.5 flex-shrink-0">
-            <Navigation className="w-4 sm:w-5 h-4 sm:h-5" />
-          </div>
-          <div>
-            <h3 className="font-bold text-sm sm:text-base text-slate-900 dark:text-slate-200">Suggested Route Recommendation</h3>
-            <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mt-1 max-w-xl">
-              {activeTab === 'morning' && '🌅 Morning Commute is active! Take Bus 452 to Beauty World MRT, or take Bus 872 to Chinese Garden MRT.'}
-              {activeTab === 'evening' && '🌇 Evening Return is active! Board Bus 674 from UIC Building, or take Bus 872 from Chinese Garden MRT back to Tengah.'}
-              {activeTab === 'all' && '🚇 Ready for your commute? Toggle Morning or Evening modes to focus on specific routes, stops, and timings.'}
-            </p>
-          </div>
-        </div>
-        <div className="flex gap-2 w-full md:w-auto">
-          <button
-            onClick={() => setActiveTab('morning')}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
-              activeTab === 'morning'
-                ? 'bg-amber-100 text-amber-700 border border-amber-300 dark:bg-amber-500/20 dark:text-amber-300 dark:border-amber-500/30'
-                : 'bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800/80'
-            }`}
-          >
-            <Sun className="w-3.5 h-3.5" /> Morning
-          </button>
-          <button
-            onClick={() => setActiveTab('evening')}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
-              activeTab === 'evening'
-                ? 'bg-indigo-100 text-indigo-700 border border-indigo-300 dark:bg-indigo-500/20 dark:text-indigo-300 dark:border-indigo-500/30'
-                : 'bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800/80'
-            }`}
-          >
-            <Moon className="w-3.5 h-3.5" /> Evening
-          </button>
-          <button
-            onClick={() => setActiveTab('all')}
-            className={`flex-1 md:flex-none flex items-center justify-center gap-1 sm:gap-1.5 px-3 py-2 rounded-lg text-xs sm:text-sm font-semibold transition ${
-              activeTab === 'all'
-                ? 'bg-slate-800 text-white border border-slate-700'
-                : 'bg-slate-50 dark:bg-slate-900/50 hover:bg-slate-100 dark:hover:bg-slate-900 text-slate-600 dark:text-slate-400 border border-slate-200 dark:border-slate-800/80'
-            }`}
-          >
-            All Stops
-          </button>
-        </div>
+    <div className="relative min-h-screen overflow-hidden">
+      <div className="pointer-events-none absolute inset-0 overflow-hidden">
+        <div className="absolute -top-32 left-1/2 h-80 w-80 -translate-x-1/2 rounded-full bg-brand-500/20 blur-3xl dark:bg-brand-500/10" />
+        <div className="absolute right-0 top-24 h-64 w-64 rounded-full bg-indigo-500/10 blur-3xl" />
+        <div className="absolute left-0 bottom-0 h-72 w-72 rounded-full bg-cyan-500/10 blur-3xl" />
       </div>
 
-      {/* Grid of Bus Stops */}
-      {loading ? (
-        <div className="flex flex-col items-center justify-center py-20 gap-4">
-          <RefreshCw className="w-10 h-10 animate-spin text-brand-500" />
-          <p className="text-slate-500 dark:text-slate-400 animate-pulse font-medium">Loading live bus information...</p>
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          {filteredStops.map((stop) => {
-            const stopData = data[stop.id];
-            return (
-              <div
-                key={stop.id}
-                className="bg-white border border-slate-200 shadow-sm dark:bg-slate-900/40 dark:border-slate-800 hover:border-slate-300 dark:hover:border-slate-700/80 rounded-xl overflow-hidden transition duration-300 dark:backdrop-blur-sm"
+      <div className="relative mx-auto max-w-6xl px-3 py-4 sm:px-4 sm:py-8">
+        <header className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+          <div className="max-w-3xl">
+            <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/20 bg-slate-900/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-200 shadow-lg shadow-brand-500/10 backdrop-blur sm:text-xs">
+              <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
+              Tengah Commute Tracker
+            </div>
+
+            <div className="mt-4 space-y-2">
+              <h1 className="text-3xl font-black tracking-tight text-slate-950 dark:text-white sm:text-4xl md:text-5xl">
+                Plantation Cres Live Board
+              </h1>
+              <p className="max-w-2xl text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">
+                A polished, live bus dashboard for Tengah residents — tuned for quick morning decisions, evening returns, and everything in between.
+              </p>
+            </div>
+          </div>
+
+          <div className="flex flex-col items-start gap-2 sm:items-end">
+            <div className="flex flex-wrap items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/80 p-2 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-900/70">
+              <button
+                onClick={() => setIsAutoRefresh(!isAutoRefresh)}
+                className={`rounded-xl px-3 py-2 text-xs font-semibold transition sm:text-sm ${
+                  isAutoRefresh
+                    ? 'border border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300'
+                    : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400 dark:hover:bg-slate-900'
+                }`}
               >
-                {/* Stop Header - Inline and responsive for mobile */}
-                <div className="bg-slate-50 dark:bg-slate-900/80 px-4 sm:px-5 py-3 sm:py-4 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center">
-                  <div className="flex items-center gap-2.5 sm:gap-3">
-                    <div className="bg-brand-100 dark:bg-brand-500/10 p-1.5 sm:p-2 rounded-lg text-brand-600 dark:text-brand-400 border border-brand-200 dark:border-brand-500/20 flex-shrink-0">
-                      <MapPin className="w-4 sm:w-5 h-4 sm:h-5" />
-                    </div>
-                    <div>
-                      <h3 className="font-bold text-sm sm:text-base md:text-lg leading-snug text-slate-900 dark:text-slate-100">
-                        {stop.name}
-                      </h3>
-                      <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
-                        <p className="text-[10px] sm:text-xs text-slate-500 dark:text-slate-400 whitespace-nowrap">{stop.roadName}</p>
-                        {stop.walkTime > 0 && (
-                          <span className="text-[9px] sm:text-[10px] bg-slate-200 text-slate-600 dark:bg-slate-800 dark:text-slate-400 px-1.5 py-0.5 rounded flex items-center gap-0.5 sm:gap-1 font-medium border border-slate-300 dark:border-slate-700 whitespace-nowrap">
-                            <Footprints className="w-2.5 sm:w-3 h-2.5 sm:h-3" /> {stop.walkTime}m
-                          </span>
-                        )}
+                {isAutoRefresh ? 'Auto On' : 'Auto Off'}
+              </button>
+
+              <button
+                onClick={refreshAll}
+                disabled={refreshing}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-900"
+                title="Refresh now"
+              >
+                <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin text-brand-500 dark:text-brand-400' : ''}`} />
+              </button>
+
+              <button
+                onClick={() => setIsDark(!isDark)}
+                className="rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-900"
+                title="Toggle dark mode"
+              >
+                {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </button>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2 text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">
+              <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1 font-medium shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/60">
+                {liveStatusLabel}
+              </span>
+              <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1 font-mono shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/60">
+                {lastUpdatedLabel}
+              </span>
+            </div>
+          </div>
+        </header>
+
+        <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
+          <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/80 p-5 shadow-2xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25 sm:p-6">
+            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-400 via-cyan-400 to-indigo-400" />
+
+            <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+              <div className="max-w-2xl">
+                <p className="text-[11px] font-semibold uppercase tracking-[0.3em] text-brand-600 dark:text-brand-400">
+                  {modeMeta.eyebrow}
+                </p>
+                <h2 className="mt-2 text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">
+                  {modeMeta.title}
+                </h2>
+                <p className="mt-2 text-sm leading-relaxed text-slate-600 dark:text-slate-400 sm:text-base">
+                  {modeMeta.description}
+                </p>
+              </div>
+
+              <div className="hidden h-12 w-12 items-center justify-center rounded-2xl border border-brand-500/20 bg-brand-50 text-brand-600 dark:bg-brand-500/10 dark:text-brand-300 sm:flex">
+                <Navigation className="h-5 w-5" />
+              </div>
+            </div>
+
+            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+              <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
+                <Sparkles className="h-3.5 w-3.5" />
+                Smart route guidance
+              </div>
+              <p className="mt-2 text-sm leading-relaxed text-slate-700 dark:text-slate-300">
+                {routeMessage}
+              </p>
+            </div>
+
+            <div className="mt-4 flex flex-wrap items-center gap-2">
+              <span className="rounded-full border border-brand-200 bg-brand-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-brand-700 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-300 sm:text-xs">
+                {modeMeta.status}
+              </span>
+              <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-medium text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400 sm:text-xs">
+                {sourceSummary}
+              </span>
+              {lastUpdated && (
+                <span className="rounded-full border border-slate-200 bg-white/80 px-2.5 py-1 text-[10px] font-medium text-slate-600 shadow-sm dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400 sm:text-xs">
+                  Updated {lastUpdated.toLocaleTimeString()}
+                </span>
+              )}
+            </div>
+          </div>
+
+          <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
+            <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                Live stops
+              </p>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+                  {liveStopCount}
+                </span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  / {filteredStops.length} visible
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                Stops are filtered by the current mode and updated live from both feeds.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                Live services
+              </p>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+                  {liveServiceCount}
+                </span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  tracked routes
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                Combined route count currently visible on the board.
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                Next departure
+              </p>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+                  {nextDepartureLabel}
+                </span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  fastest pull
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                {nextDeparture ? `${nextDeparture.busNo} · ${nextDeparture.stopName}` : 'Waiting for fresh data.'}
+              </p>
+            </div>
+
+            <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25">
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                Refresh cadence
+              </p>
+              <div className="mt-3 flex items-baseline gap-2">
+                <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
+                  {isAutoRefresh ? '30s' : 'Paused'}
+                </span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">
+                  live sync
+                </span>
+              </div>
+              <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
+                {isAutoRefresh ? 'The board refreshes in the background.' : 'Manual refresh is enabled.'}
+              </p>
+            </div>
+          </div>
+        </section>
+
+        <section className="mt-6 mb-6 rounded-3xl border border-slate-200/80 bg-white/80 p-3 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 sm:p-4">
+          <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+            <div>
+              <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                Mode
+              </p>
+              <h3 className="mt-1 text-sm font-semibold text-slate-900 dark:text-slate-100 sm:text-base">
+                {modeMeta.status}
+              </h3>
+              <p className="mt-1 text-xs text-slate-600 dark:text-slate-400 sm:text-sm">
+                Switch between morning, evening, or the full route view.
+              </p>
+            </div>
+
+            <div className="flex w-full flex-wrap gap-2 lg:w-auto">
+              <button
+                onClick={() => setActiveTab('morning')}
+                className={`flex-1 rounded-2xl px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
+                  activeTab === 'morning'
+                    ? 'border border-amber-200 bg-amber-100 text-amber-700 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300'
+                    : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
+                }`}
+              >
+                <Sun className="mr-1.5 inline-block h-3.5 w-3.5" />
+                Morning
+              </button>
+              <button
+                onClick={() => setActiveTab('evening')}
+                className={`flex-1 rounded-2xl px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
+                  activeTab === 'evening'
+                    ? 'border border-indigo-200 bg-indigo-100 text-indigo-700 shadow-sm dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300'
+                    : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
+                }`}
+              >
+                <Moon className="mr-1.5 inline-block h-3.5 w-3.5" />
+                Evening
+              </button>
+              <button
+                onClick={() => setActiveTab('all')}
+                className={`flex-1 rounded-2xl px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
+                  activeTab === 'all'
+                    ? 'border border-slate-700 bg-slate-800 text-white shadow-sm'
+                    : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
+                }`}
+              >
+                All Stops
+              </button>
+            </div>
+          </div>
+        </section>
+
+        {loading ? (
+          <div className="flex flex-col items-center justify-center gap-4 py-20">
+            <RefreshCw className="h-10 w-10 animate-spin text-brand-500" />
+            <p className="font-medium text-slate-500 animate-pulse dark:text-slate-400">
+              Loading live bus information...
+            </p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
+            {filteredStops.map((stop) => {
+              const stopData = data[stop.id];
+
+              return (
+                <div
+                  key={stop.id}
+                  className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/85 shadow-2xl shadow-slate-950/5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-slate-950/10 dark:border-slate-800 dark:bg-slate-900/55 dark:hover:border-slate-700 dark:hover:shadow-slate-950/25"
+                >
+                  <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stopAccentClass(stop.type)}`} />
+
+                  <div className="flex flex-col gap-4 border-b border-slate-100 px-4 py-4 dark:border-slate-800 sm:px-5 sm:py-5 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="flex items-start gap-3">
+                      <div className="flex-shrink-0 rounded-2xl border border-brand-200 bg-brand-100 p-2 text-brand-600 dark:border-brand-500/20 dark:bg-brand-500/10 dark:text-brand-400">
+                        <MapPin className="h-4 w-4 sm:h-5 sm:w-5" />
                       </div>
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-end gap-0.5 sm:gap-1 flex-shrink-0">
-                    <span className="text-[9px] sm:text-[10px] font-mono text-slate-500 uppercase tracking-wider">
-                      Code {stop.id}
-                    </span>
-                    {stopData && (
-                      <span
-                        className={`text-[9px] sm:text-[10px] px-1.5 sm:px-2 py-0.5 rounded-full font-bold uppercase tracking-wider ${
-                          stopData.source === 'LTA'
-                            ? 'bg-sky-100 text-sky-700 border border-sky-200 dark:bg-sky-600/10 dark:text-sky-400 dark:border-sky-500/10'
-                            : 'bg-indigo-100 text-indigo-700 border border-indigo-200 dark:bg-indigo-600/10 dark:text-indigo-400 dark:border-indigo-500/10'
-                        }`}
-                      >
-                        {stopData.source}
-                      </span>
-                    )}
-                  </div>
-                </div>
 
-                {/* Bus List */}
-                <div className="p-4 sm:p-5 divide-y divide-slate-100 dark:divide-slate-800/50">
-                  {stopData?.buses.map((bus) => {
-                    const isTargetBus =
-                      (activeTab === 'morning' && ['872', '452', '871'].includes(bus.busNo)) ||
-                      (activeTab === 'evening' && ['674', '872'].includes(bus.busNo));
-
-                    return (
-                      <div
-                        key={bus.busNo}
-                        className={`py-3 flex items-center justify-between gap-3 first:pt-0 last:pb-0 transition-all rounded-lg ${
-                          isTargetBus ? 'bg-brand-50 px-2 sm:px-3 -mx-2 sm:-mx-3 border border-brand-100 dark:bg-brand-500/5 dark:border-brand-500/10' : ''
-                        }`}
-                      >
-                        {/* Bus Badge and Route Description */}
-                        <div className="flex items-center gap-2 sm:gap-3 flex-shrink-0">
-                          <div
-                            className={`min-w-[2.75rem] h-9 sm:min-w-[3.5rem] sm:h-11 px-1 sm:px-2 rounded-lg flex items-center justify-center font-extrabold text-sm sm:text-base border transition flex-shrink-0 ${
-                              isTargetBus
-                                ? 'bg-brand-100 text-brand-700 border-brand-300 dark:bg-brand-500/20 dark:text-brand-300 dark:border-brand-500/40 dark:shadow-sm dark:shadow-brand-500/10'
-                                : 'bg-slate-100 text-slate-700 border-slate-300 dark:bg-slate-800 dark:text-slate-300 dark:border-slate-700/60'
-                            }`}
-                          >
-                            {bus.busNo}
-                          </div>
-                          {/* Text Removed to save space on mobile */}
-                        </div>
-
-                        {/* Timing Indicators - Horizontally aligned and scroll-prevented */}
-                        <div className="flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto no-scrollbar max-w-full justify-end flex-grow pt-1 pb-1">
-                          {bus.timings.length > 0 ? (
-                            bus.timings.map((t, idx) => {
-                              const isArr = t.mins === 'Arr';
-                              const displayTime = isArr ? 'Arr' : `${t.mins}m`;
-                              const timeToLeave = isArr ? -99 : (t.mins as number) - stop.walkTime;
-                              const isLeavingNow = timeToLeave >= -2 && timeToLeave <= 3;
-                              const crowdColorClass = 
-                                t.load === 'LSD' ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]' : 
-                                t.load === 'SDA' ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]' : 
-                                'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]';
-
-                              return (
-                                <div
-                                  key={idx}
-                                  className={`relative min-w-[3.2rem] sm:min-w-[3.8rem] flex flex-col items-center justify-center px-1.5 py-1.5 sm:px-2 sm:py-2 rounded-xl font-mono shadow-sm border transition ${
-                                    idx === 0
-                                      ? isArr
-                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-600/20 dark:text-emerald-400 dark:border-emerald-500/30'
-                                        : isLeavingNow
-                                          ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-600/20 dark:text-rose-400 dark:border-rose-500/30 ring-1 ring-rose-400 dark:ring-rose-500/50'
-                                          : 'bg-brand-50 text-brand-700 border-brand-200 dark:bg-brand-500/20 dark:text-brand-300 dark:border-brand-500/30'
-                                      : 'bg-white text-slate-600 border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-800'
-                                  }`}
-                                >
-                                  {/* Top Area: Icon or LEAVE text */}
-                                  <div className="h-4 sm:h-5 flex items-center justify-center w-full mb-0.5">
-                                    {idx === 0 && isLeavingNow ? (
-                                      <span className="bg-rose-500 text-white text-[8px] sm:text-[9px] font-extrabold px-1.5 py-0.5 rounded tracking-widest leading-none animate-pulse shadow-sm">
-                                        LEAVE
-                                      </span>
-                                    ) : (
-                                      t.type === 'DD' ? (
-                                        <DoubleDeckerIcon className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-brand-600 dark:text-brand-400 opacity-90" />
-                                      ) : t.type === 'BD' ? (
-                                        <BendyBusIcon className="w-4 h-4 sm:w-5 sm:h-4.5 text-amber-600 dark:text-amber-400 opacity-90" />
-                                      ) : (
-                                        <div className="w-4 h-4 sm:w-4.5 sm:h-4.5" /> /* Placeholder spacer for SD to maintain consistent height */
-                                      )
-                                    )}
-                                  </div>
-                                  
-                                  {/* Bottom Area: Time & Crowd */}
-                                  <div className="flex items-center gap-1.5">
-                                    <span className={`text-xs sm:text-sm font-black tracking-tighter ${isArr && 'text-emerald-600 dark:text-emerald-400'}`}>{displayTime}</span>
-                                    <div 
-                                      className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0 ${crowdColorClass}`} 
-                                      title={`Crowd level: ${t.load === 'LSD' ? 'Crowded (No Seats)' : t.load === 'SDA' ? 'Standing Available' : 'Seats Available'}`}
-                                    />
-                                  </div>
-                                </div>
-                              );
-                            })
-                          ) : (
-                            <div className="text-[10px] sm:text-xs text-slate-500 bg-slate-50 dark:bg-slate-800/50 px-2 py-1 sm:px-3 sm:py-1.5 rounded-md border border-slate-200 dark:border-slate-800/80 flex items-center gap-1.5 flex-shrink-0">
-                              <AlertTriangle className="w-3 h-3 sm:w-3.5 sm:h-3.5 text-slate-400 dark:text-slate-500" />
-                              Not operating
-                            </div>
+                      <div>
+                        <span className="inline-flex rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.24em] text-slate-500 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400">
+                          {stopTypeLabel(stop.type)}
+                        </span>
+                        <h3 className="mt-2 text-sm font-black leading-snug text-slate-950 dark:text-slate-100 sm:text-base md:text-lg">
+                          {stop.name}
+                        </h3>
+                        <div className="mt-1 flex flex-wrap items-center gap-2">
+                          <p className="whitespace-nowrap text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">
+                            {stop.roadName}
+                          </p>
+                          {stop.walkTime > 0 && (
+                            <span className="inline-flex items-center gap-1 whitespace-nowrap rounded-full border border-slate-200 bg-slate-100 px-2 py-0.5 text-[9px] font-semibold text-slate-600 dark:border-slate-700 dark:bg-slate-800 dark:text-slate-400 sm:text-[10px]">
+                              <Footprints className="h-2.5 w-2.5 sm:h-3 sm:w-3" />
+                              {stop.walkTime}m walk
+                            </span>
                           )}
                         </div>
                       </div>
-                    );
-                  })}
-                  {(!stopData || stopData.buses.length === 0) && (
-                    <div className="py-6 text-center text-slate-500 text-sm">
-                      No timings available for this stop.
                     </div>
-                  )}
+
+                    <div className="flex items-end gap-2 sm:gap-3 lg:flex-col lg:items-end">
+                      <div className="text-right">
+                        <span className="block text-[9px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 sm:text-[10px]">
+                          Code
+                        </span>
+                        <div className="text-base font-black tracking-[0.18em] text-slate-900 dark:text-white sm:text-lg">
+                          {stop.id}
+                        </div>
+                      </div>
+
+                      {stopData && (
+                        <span
+                          className={`rounded-full border px-2 py-0.5 text-[9px] font-bold uppercase tracking-wider sm:text-[10px] ${
+                            stopData.source === 'LTA'
+                              ? 'border-sky-200 bg-sky-100 text-sky-700 dark:border-sky-500/10 dark:bg-sky-500/10 dark:text-sky-300'
+                              : 'border-indigo-200 bg-indigo-100 text-indigo-700 dark:border-indigo-500/10 dark:bg-indigo-500/10 dark:text-indigo-300'
+                          }`}
+                        >
+                          {stopData.source}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  <div className="px-4 pb-4 pt-4 sm:px-5 sm:pb-5">
+                    <div className="mb-3 flex items-center justify-between">
+                      <div>
+                        <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                          Live services
+                        </p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                          {stopData ? `${stopData.buses.length} tracked routes` : 'Waiting for fresh data'}
+                        </p>
+                      </div>
+
+                      {stopData && (
+                        <span
+                          className={`rounded-full border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] ${
+                            stopData.source === 'LTA'
+                              ? 'border-sky-200 bg-sky-50 text-sky-700 dark:border-sky-500/10 dark:bg-sky-500/10 dark:text-sky-300'
+                              : 'border-indigo-200 bg-indigo-50 text-indigo-700 dark:border-indigo-500/10 dark:bg-indigo-500/10 dark:text-indigo-300'
+                          }`}
+                        >
+                          {stopData.source} feed
+                        </span>
+                      )}
+                    </div>
+
+                    <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
+                      {stopData?.buses.map((bus) => {
+                        const isTargetBus =
+                          (activeTab === 'morning' && ['872', '452', '871'].includes(bus.busNo)) ||
+                          (activeTab === 'evening' && ['674', '872'].includes(bus.busNo));
+
+                        return (
+                          <div
+                            key={bus.busNo}
+                            className={`flex items-center justify-between gap-3 rounded-2xl py-3 transition-all first:pt-0 last:pb-0 ${
+                              isTargetBus ? 'bg-brand-50/90 px-3 -mx-3 border border-brand-100 dark:bg-brand-500/10 dark:border-brand-500/10' : ''
+                            }`}
+                          >
+                            <div className="flex shrink-0 items-center gap-2 sm:gap-3">
+                              <div
+                                className={`flex h-9 min-w-[2.75rem] items-center justify-center rounded-2xl border px-1 text-sm font-extrabold transition sm:h-11 sm:min-w-[3.5rem] sm:px-2 sm:text-base ${
+                                  isTargetBus
+                                    ? 'border-brand-300 bg-brand-100 text-brand-700 shadow-sm dark:border-brand-500/40 dark:bg-brand-500/20 dark:text-brand-300 dark:shadow-brand-500/10'
+                                    : 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700/60 dark:bg-slate-800 dark:text-slate-300'
+                                }`}
+                              >
+                                {bus.busNo}
+                              </div>
+                            </div>
+
+                            <div className="flex max-w-full flex-grow items-center justify-end gap-1.5 overflow-x-auto pt-1 pb-1 sm:gap-2.5 no-scrollbar">
+                              {bus.timings.length > 0 ? (
+                                bus.timings.map((t, idx) => {
+                                  const isArr = t.mins === 'Arr';
+                                  const displayTime = isArr ? 'Arr' : `${t.mins}m`;
+                                  const timeToLeave = isArr ? -99 : (t.mins as number) - stop.walkTime;
+                                  const isLeavingNow = timeToLeave >= -2 && timeToLeave <= 3;
+                                  const crowdColorClass =
+                                    t.load === 'LSD'
+                                      ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]'
+                                      : t.load === 'SDA'
+                                        ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]'
+                                        : 'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]';
+
+                                  return (
+                                    <div
+                                      key={idx}
+                                      className={`relative flex min-w-[3.2rem] flex-col items-center justify-center rounded-xl border px-1.5 py-1.5 font-mono shadow-sm transition sm:min-w-[3.8rem] sm:px-2 sm:py-2 ${
+                                        idx === 0
+                                          ? isArr
+                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-600/20 dark:text-emerald-400'
+                                            : isLeavingNow
+                                              ? 'border-rose-300 bg-rose-50 text-rose-700 ring-1 ring-rose-400 dark:border-rose-500/30 dark:bg-rose-600/20 dark:text-rose-400 dark:ring-rose-500/50'
+                                              : 'border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/20 dark:text-brand-300'
+                                          : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400'
+                                      }`}
+                                    >
+                                      <div className="mb-0.5 flex h-4 w-full items-center justify-center sm:h-5">
+                                        {idx === 0 && isLeavingNow ? (
+                                          <span className="rounded bg-rose-500 px-1.5 py-0.5 text-[8px] font-extrabold leading-none tracking-widest text-white shadow-sm animate-pulse sm:text-[9px]">
+                                            LEAVE
+                                          </span>
+                                        ) : t.type === 'DD' ? (
+                                          <DoubleDeckerIcon className="h-4 w-4 text-brand-600 opacity-90 dark:text-brand-400" />
+                                        ) : t.type === 'BD' ? (
+                                          <BendyBusIcon className="h-4 w-4 text-amber-600 opacity-90 sm:h-4.5 sm:w-5 dark:text-amber-400" />
+                                        ) : (
+                                          <div className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+                                        )}
+                                      </div>
+
+                                      <div className="flex items-center gap-1.5">
+                                        <span className={`text-xs font-black tracking-tighter sm:text-sm ${isArr && 'text-emerald-600 dark:text-emerald-400'}`}>
+                                          {displayTime}
+                                        </span>
+                                        <div
+                                          className={`h-1.5 w-1.5 flex-shrink-0 rounded-full sm:h-2 sm:w-2 ${crowdColorClass}`}
+                                          title={`Crowd level: ${t.load === 'LSD' ? 'Crowded (No Seats)' : t.load === 'SDA' ? 'Standing Available' : 'Seats Available'}`}
+                                        />
+                                      </div>
+                                    </div>
+                                  );
+                                })
+                              ) : (
+                                <div className="flex flex-shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] text-slate-500 dark:border-slate-800/80 dark:bg-slate-800/50 dark:text-slate-400 sm:px-3 sm:py-1.5 sm:text-xs">
+                                  <AlertTriangle className="h-3 w-3 text-slate-400 dark:text-slate-500 sm:h-3.5 sm:w-3.5" />
+                                  Not operating
+                                </div>
+                              )}
+                            </div>
+                          </div>
+                        );
+                      })}
+
+                      {(!stopData || stopData.buses.length === 0) && (
+                        <div className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
+                          No timings available for this stop.
+                        </div>
+                      )}
+                    </div>
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
-      )}
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 }
