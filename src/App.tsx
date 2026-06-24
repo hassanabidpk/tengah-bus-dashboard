@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { MapPin, Clock, RefreshCw, Sun, Moon, Sparkles, Navigation, AlertTriangle, Footprints, Users } from 'lucide-react';
+import { MapPin, Clock, RefreshCw, Sun, Moon, Sparkles, Navigation, AlertTriangle, Footprints } from 'lucide-react';
 
 interface BusStop {
   id: string;
@@ -16,6 +16,7 @@ const STOPS: BusStop[] = [
   { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'], walkTime: 4 },
   { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'], walkTime: 4 },
   { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'], walkTime: 2 },
+  { id: '28359', name: 'Blk 350', roadName: 'Boon Lay Way', type: 'evening', guaranteed: ['872'], walkTime: 3 },
   { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 8 },
   { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 8 },
 ];
@@ -39,22 +40,36 @@ interface StopData {
   buses: BusTimingInfo[];
 }
 
-// Custom responsive SVGs for single, double decker, and bendy buses
+// Vintage London Bus Inspired SVGs
 const SingleDeckerIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="8" width="18" height="8" rx="1.5" />
-    <path d="M3 12h18M7 8v4M12 8v4M17 8v4" />
-    <circle cx="7" cy="18" r="1.5" />
-    <circle cx="17" cy="18" r="1.5" />
+    <path d="M3 15V9a1.5 1.5 0 0 1 1.5-1.5h12.5a2.5 2.5 0 0 1 2.5 2.5V15" />
+    <path d="M19.5 15h1a1 1 0 0 1 1 1v1h-3.5v-2z" strokeWidth="1.8" />
+    <path d="M3 15h16.5" />
+    <path d="M3 15H1.5a0.5 0 0 0-.5.5v1h2v-1.5z" />
+    <rect x="5.5" y="10" width="3" height="3" rx="0.5" />
+    <rect x="10" y="10" width="3" height="3" rx="0.5" />
+    <rect x="14.5" y="10" width="2.5" height="3" rx="0.5" />
+    <circle cx="6.5" cy="17.5" r="1.5" />
+    <circle cx="15.5" cy="17.5" r="1.5" />
   </svg>
 );
 
 const DoubleDeckerIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" className={className} strokeLinecap="round" strokeLinejoin="round">
-    <rect x="3" y="4" width="18" height="12" rx="1.5" />
-    <path d="M3 10h18M7 4v6M12 4v6M17 4v6M7 10v6M12 10v6M17 10v6" />
-    <circle cx="7" cy="18" r="1.5" />
-    <circle cx="17" cy="18" r="1.5" />
+    <path d="M3 15V5a1.5 1.5 0 0 1 1.5-1.5h12.5a2.5 2.5 0 0 1 2.5 2.5V15" />
+    <path d="M19.5 15h1a1 1 0 0 1 1 1v1h-3.5v-2z" strokeWidth="1.8" />
+    <path d="M3 15h16.5" />
+    <path d="M3 15H1.5a0.5 0 0 0-.5.5v1h2v-1.5z" />
+    <path d="M3 9.5h16.5" />
+    <rect x="5.5" y="5.5" width="3" height="2.5" rx="0.5" />
+    <rect x="10" y="5.5" width="3" height="2.5" rx="0.5" />
+    <rect x="14.5" y="5.5" width="2.5" height="2.5" rx="0.5" />
+    <rect x="5.5" y="11" width="3" height="2.5" rx="0.5" />
+    <rect x="10" y="11" width="3" height="2.5" rx="0.5" />
+    <rect x="14.5" y="11" width="2.5" height="2.5" rx="0.5" />
+    <circle cx="6.5" cy="17.5" r="1.5" />
+    <circle cx="15.5" cy="17.5" r="1.5" />
   </svg>
 );
 
@@ -165,7 +180,7 @@ export default function App() {
       
       const buses: BusTimingInfo[] = allBusNumbers
         .filter((busNo) => {
-          if (['03129', '43759', '43751'].includes(stop.id)) return stop.guaranteed.includes(busNo);
+          if (['03129', '28359', '43759', '43751'].includes(stop.id)) return stop.guaranteed.includes(busNo);
           return true;
         })
         .map((busNo) => ({
@@ -350,7 +365,7 @@ export default function App() {
                       <MapPin className="w-4 sm:w-5 h-4 sm:h-5" />
                     </div>
                     <div>
-                      <h3 className="font-bold text-slate-900 dark:text-slate-100 text-sm sm:text-base md:text-lg leading-snug">
+                      <h3 className="font-bold text-sm sm:text-base md:text-lg leading-snug text-slate-900 dark:text-slate-100">
                         {stop.name}
                       </h3>
                       <div className="flex items-center gap-1.5 sm:gap-2 mt-0.5">
@@ -434,7 +449,7 @@ export default function App() {
                               return (
                                 <div
                                   key={idx}
-                                  className={`relative px-1.5 sm:px-2.5 py-1 sm:py-1.5 rounded-md font-mono text-[10px] sm:text-xs sm:text-sm font-bold flex items-center gap-1 sm:gap-1.5 shadow-sm border transition ${
+                                  className={`relative px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg font-mono text-[10px] sm:text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm border transition ${
                                     idx === 0
                                       ? isArr
                                         ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-600/20 dark:text-emerald-400 dark:border-emerald-500/30 animate-pulse'
@@ -445,54 +460,39 @@ export default function App() {
                                   }`}
                                 >
                                   {idx === 0 && isLeavingNow && (
-                                    <div className="absolute -top-2.5 -right-1 bg-rose-500 text-white text-[7px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded shadow-sm border border-rose-600 tracking-wider">
+                                    <div className="absolute -top-2.5 -right-1 bg-rose-500 text-white text-[7px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded shadow-sm border border-rose-600 tracking-wider font-extrabold leading-none">
                                       LEAVE
                                     </div>
                                   )}
                                   
                                   {/* Time */}
-                                  <div className="flex items-center gap-0.5 sm:gap-1 flex-shrink-0">
-                                    <Clock className="w-3 sm:w-3.5 h-3 sm:h-3.5 opacity-75" />
-                                    <span>{displayTime}</span>
+                                  <div className="flex items-center gap-1 flex-shrink-0">
+                                    <Clock className="w-3 sm:w-3.5 h-3 sm:h-3.5 opacity-60" />
+                                    <span className="font-extrabold tracking-tight">{displayTime}</span>
                                   </div>
                                   
-                                  {/* Crowd dot */}
-                                  <div className={`flex items-center border-l pl-1 sm:pl-1.5 ${
-                                    idx === 0 
-                                      ? (isArr 
-                                        ? 'border-emerald-200 dark:border-emerald-500/30' 
-                                        : isLeavingNow 
-                                          ? 'border-rose-200 dark:border-rose-500/30' 
-                                          : 'border-brand-200 dark:border-brand-500/30') 
-                                      : 'border-slate-200 dark:border-slate-700'
-                                  }`}>
-                                    <div className="flex items-center gap-0.5 sm:gap-1 opacity-90 flex-shrink-0" title={`Crowd level: ${t.load === 'LSD' ? 'Crowded' : t.load === 'SDA' ? 'Standing' : 'Seats Available'}`}>
-                                      <Users className="w-2.5 sm:w-3 h-2.5 sm:h-3" />
-                                      <div className={`w-1.5 sm:w-2 h-1.5 sm:h-2 rounded-full ${crowdColorClass}`} />
+                                  {/* Divider & Compact Indicators */}
+                                  <div className="flex items-center gap-1.5 border-l pl-1.5 border-slate-200 dark:border-slate-700">
+                                    {/* Crowd Level Dot */}
+                                    <div 
+                                      className="flex items-center flex-shrink-0" 
+                                      title={`Crowd level: ${t.load === 'LSD' ? 'Crowded (No Seats)' : t.load === 'SDA' ? 'Standing Available' : 'Seats Available'}`}
+                                    >
+                                      <div className={`w-2 h-2 rounded-full ${crowdColorClass}`} />
                                     </div>
-                                  </div>
 
-                                  {/* Bus Type Icon */}
-                                  <div className={`flex items-center border-l pl-1 sm:pl-1.5 ${
-                                    idx === 0 
-                                      ? (isArr 
-                                        ? 'border-emerald-200 dark:border-emerald-500/30' 
-                                        : isLeavingNow 
-                                          ? 'border-rose-200 dark:border-rose-500/30' 
-                                          : 'border-brand-200 dark:border-brand-500/30') 
-                                      : 'border-slate-200 dark:border-slate-700'
-                                  }`}>
-                                    <div className="flex items-center gap-0.5 sm:gap-1 opacity-90 flex-shrink-0" title={t.type === 'DD' ? 'Double Decker Bus' : t.type === 'BD' ? 'Bendy Bus' : 'Single Decker Bus'}>
+                                    {/* London Bus Type Icon */}
+                                    <div 
+                                      className="flex items-center text-slate-500 dark:text-slate-400 flex-shrink-0" 
+                                      title={t.type === 'DD' ? 'London-style Double Decker' : t.type === 'BD' ? 'Bendy Bus' : 'London-style Single Decker'}
+                                    >
                                       {t.type === 'DD' ? (
-                                        <DoubleDeckerIcon className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-slate-500 dark:text-slate-400" />
+                                        <DoubleDeckerIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-600 dark:text-brand-400" />
                                       ) : t.type === 'BD' ? (
-                                        <BendyBusIcon className="w-4 sm:w-4.5 h-3.5 sm:h-4 text-slate-500 dark:text-slate-400" />
+                                        <BendyBusIcon className="w-4 h-3.5 sm:w-4.5 sm:h-4 text-amber-600 dark:text-amber-400" />
                                       ) : (
-                                        <SingleDeckerIcon className="w-3.5 sm:w-4 h-3.5 sm:h-4 text-slate-500 dark:text-slate-400" />
+                                        <SingleDeckerIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-slate-500 dark:text-slate-400" />
                                       )}
-                                      <span className="text-[8px] sm:text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500">
-                                        {t.type || 'SD'}
-                                      </span>
                                     </div>
                                   </div>
                                 </div>
