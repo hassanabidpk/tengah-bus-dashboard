@@ -371,8 +371,8 @@ export default function App() {
         </header>
 
         <section className="grid gap-4 xl:grid-cols-[1.25fr_0.75fr]">
-          <div className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/80 p-5 shadow-2xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25 sm:p-6">
-            <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-brand-400 via-cyan-400 to-indigo-400" />
+          <div className="relative overflow-hidden rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
+            <div className="absolute inset-x-0 top-0 h-0.5 bg-slate-900/90 dark:bg-white/20" />
 
             <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
               <div className="max-w-2xl">
@@ -392,7 +392,7 @@ export default function App() {
               </div>
             </div>
 
-            <div className="mt-5 rounded-2xl border border-slate-200/80 bg-slate-50/80 p-4 dark:border-slate-800 dark:bg-slate-950/40">
+            <div className="mt-5 rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
               <div className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400">
                 <Sparkles className="h-3.5 w-3.5" />
                 Smart route guidance
@@ -418,9 +418,9 @@ export default function App() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2 xl:grid-cols-2">
-            <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                Live stops
+                Live overview
               </p>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
@@ -435,9 +435,9 @@ export default function App() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                Live services
+                Service counts
               </p>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-3xl font-black tracking-tight text-slate-950 dark:text-white">
@@ -452,7 +452,7 @@ export default function App() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Next departure
               </p>
@@ -469,7 +469,7 @@ export default function App() {
               </p>
             </div>
 
-            <div className="rounded-3xl border border-slate-200/80 bg-white/80 p-4 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 dark:shadow-slate-950/25">
+            <div className="rounded-xl border border-slate-200 bg-slate-50 p-4 dark:border-slate-800 dark:bg-slate-950">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Refresh cadence
               </p>
@@ -488,7 +488,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className="mt-6 mb-6 rounded-3xl border border-slate-200/80 bg-white/80 p-3 shadow-xl shadow-slate-950/5 backdrop-blur dark:border-slate-800 dark:bg-slate-900/60 sm:p-4">
+        <section className="mt-6 mb-6 rounded-2xl border border-slate-200 bg-white p-3 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-4">
           <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
@@ -505,7 +505,7 @@ export default function App() {
             <div className="flex w-full flex-wrap gap-2 lg:w-auto">
               <button
                 onClick={() => setActiveTab('morning')}
-                className={`flex-1 rounded-2xl px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
+                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
                   activeTab === 'morning'
                     ? 'border border-amber-200 bg-amber-100 text-amber-700 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
@@ -516,7 +516,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => setActiveTab('evening')}
-                className={`flex-1 rounded-2xl px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
+                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
                   activeTab === 'evening'
                     ? 'border border-indigo-200 bg-indigo-100 text-indigo-700 shadow-sm dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
@@ -527,7 +527,7 @@ export default function App() {
               </button>
               <button
                 onClick={() => setActiveTab('all')}
-                className={`flex-1 rounded-2xl px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
+                className={`flex-1 rounded-full px-3 py-2 text-xs font-semibold transition sm:flex-none sm:text-sm ${
                   activeTab === 'all'
                     ? 'border border-slate-700 bg-slate-800 text-white shadow-sm'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
@@ -585,7 +585,7 @@ export default function App() {
                       </div>
                     </div>
 
-                    <div className="flex items-end gap-2 sm:gap-3 lg:flex-col lg:items-end">
+                    <div className="flex items-center gap-2 sm:gap-3">
                       <div className="text-right">
                         <span className="block text-[9px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 sm:text-[10px]">
                           Code
@@ -613,7 +613,7 @@ export default function App() {
                     <div className="mb-3 flex items-center justify-between">
                       <div>
                         <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                          Live services
+                          Service counts
                         </p>
                         <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
                           {stopData ? `${stopData.buses.length} tracked routes` : 'Waiting for fresh data'}
@@ -642,7 +642,7 @@ export default function App() {
                         return (
                           <div
                             key={bus.busNo}
-                            className={`flex items-center justify-between gap-3 rounded-2xl py-3 transition-all first:pt-0 last:pb-0 ${
+                            className={`flex items-center gap-2 rounded-2xl py-3 transition-all first:pt-0 last:pb-0 ${
                               isTargetBus ? 'bg-brand-50/90 px-3 -mx-3 border border-brand-100 dark:bg-brand-500/10 dark:border-brand-500/10' : ''
                             }`}
                           >
@@ -658,7 +658,7 @@ export default function App() {
                               </div>
                             </div>
 
-                            <div className="flex max-w-full flex-grow items-center justify-end gap-1.5 overflow-x-auto pt-1 pb-1 sm:gap-2.5 no-scrollbar">
+                            <div className="flex max-w-full items-center gap-1.5 overflow-x-auto no-scrollbar pt-1 pb-1 sm:gap-2">
                               {bus.timings.length > 0 ? (
                                 bus.timings.map((t, idx) => {
                                   const isArr = t.mins === 'Arr';
@@ -675,7 +675,7 @@ export default function App() {
                                   return (
                                     <div
                                       key={idx}
-                                      className={`relative flex min-w-[3.2rem] flex-col items-center justify-center rounded-xl border px-1.5 py-1.5 font-mono shadow-sm transition sm:min-w-[3.8rem] sm:px-2 sm:py-2 ${
+                                      className={`relative flex min-w-[2.9rem] flex-col items-center justify-center rounded-lg border px-1.5 py-1.5 font-mono shadow-sm transition sm:min-w-[3.3rem] sm:px-2 sm:py-2 ${
                                         idx === 0
                                           ? isArr
                                             ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-600/20 dark:text-emerald-400'
@@ -685,17 +685,18 @@ export default function App() {
                                           : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400'
                                       }`}
                                     >
-                                      <div className="mb-0.5 flex h-4 w-full items-center justify-center sm:h-5">
-                                        {idx === 0 && isLeavingNow ? (
-                                          <span className="rounded bg-rose-500 px-1.5 py-0.5 text-[8px] font-extrabold leading-none tracking-widest text-white shadow-sm animate-pulse sm:text-[9px]">
-                                            LEAVE
-                                          </span>
-                                        ) : t.type === 'DD' ? (
-                                          <DoubleDeckerIcon className="h-4 w-4 text-brand-600 opacity-90 dark:text-brand-400" />
+                                      <div className="relative mb-0.5 flex h-5 w-full items-center justify-center sm:h-5">
+                                        {t.type === 'DD' ? (
+                                          <DoubleDeckerIcon className="h-4 w-4 text-slate-500 opacity-90 dark:text-slate-300" />
                                         ) : t.type === 'BD' ? (
-                                          <BendyBusIcon className="h-4 w-4 text-amber-600 opacity-90 sm:h-4.5 sm:w-5 dark:text-amber-400" />
+                                          <BendyBusIcon className="h-4 w-4 text-slate-500 opacity-90 sm:h-4.5 sm:w-5 dark:text-slate-300" />
                                         ) : (
                                           <div className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
+                                        )}
+                                        {idx === 0 && isLeavingNow && (
+                                          <span className="absolute -top-1 right-0 rounded bg-rose-500 px-1 py-0.5 text-[7px] font-extrabold leading-none tracking-widest text-white shadow-sm sm:text-[8px]">
+                                            LEAVE
+                                          </span>
                                         )}
                                       </div>
 
