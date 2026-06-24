@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { MapPin, Clock, RefreshCw, Sun, Moon, Sparkles, Navigation, AlertTriangle, Footprints } from 'lucide-react';
+import { MapPin, RefreshCw, Sun, Moon, Sparkles, Navigation, AlertTriangle, Footprints } from 'lucide-react';
 
 interface BusStop {
   id: string;
@@ -411,66 +411,55 @@ export default function App() {
                         </div>
 
                         {/* Timing Indicators - Horizontally aligned and scroll-prevented */}
-                        <div className="flex items-center gap-1.5 sm:gap-2 overflow-x-auto no-scrollbar max-w-full justify-end flex-grow">
+                        <div className="flex items-center gap-1.5 sm:gap-2.5 overflow-x-auto no-scrollbar max-w-full justify-end flex-grow pt-1 pb-1">
                           {bus.timings.length > 0 ? (
                             bus.timings.map((t, idx) => {
                               const isArr = t.mins === 'Arr';
                               const displayTime = isArr ? 'Arr' : `${t.mins}m`;
-                              const timeToLeave = isArr ? null : (t.mins as number) - stop.walkTime;
-                              const isLeavingNow = typeof timeToLeave === 'number' && timeToLeave >= 0 && timeToLeave <= 2;
+                              const timeToLeave = isArr ? -99 : (t.mins as number) - stop.walkTime;
+                              const isLeavingNow = timeToLeave >= -2 && timeToLeave <= 3;
                               const crowdColorClass = 
-                                t.load === 'LSD' ? 'bg-rose-500 shadow-[0_0_8px_rgba(244,63,94,0.5)]' : 
-                                t.load === 'SDA' ? 'bg-amber-500 shadow-[0_0_8px_rgba(245,158,11,0.4)]' : 
-                                'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.4)]';
+                                t.load === 'LSD' ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]' : 
+                                t.load === 'SDA' ? 'bg-amber-500 shadow-[0_0_6px_rgba(245,158,11,0.4)]' : 
+                                'bg-emerald-500 shadow-[0_0_6px_rgba(16,185,129,0.4)]';
 
                               return (
                                 <div
                                   key={idx}
-                                  className={`relative px-2 py-1 sm:px-2.5 sm:py-1.5 rounded-lg font-mono text-[10px] sm:text-xs sm:text-sm font-bold flex items-center gap-1.5 shadow-sm border transition ${
+                                  className={`relative min-w-[3.2rem] sm:min-w-[3.8rem] flex flex-col items-center justify-center px-1.5 py-1.5 sm:px-2 sm:py-2 rounded-xl font-mono shadow-sm border transition ${
                                     idx === 0
                                       ? isArr
-                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-600/20 dark:text-emerald-400 dark:border-emerald-500/30 animate-pulse'
+                                        ? 'bg-emerald-50 text-emerald-700 border-emerald-300 dark:bg-emerald-600/20 dark:text-emerald-400 dark:border-emerald-500/30'
                                         : isLeavingNow
-                                          ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-600/20 dark:text-rose-400 dark:border-rose-500/30 animate-pulse'
+                                          ? 'bg-rose-50 text-rose-700 border-rose-300 dark:bg-rose-600/20 dark:text-rose-400 dark:border-rose-500/30 ring-1 ring-rose-400 dark:ring-rose-500/50'
                                           : 'bg-brand-50 text-brand-700 border-brand-200 dark:bg-brand-500/20 dark:text-brand-300 dark:border-brand-500/30'
                                       : 'bg-white text-slate-600 border-slate-200 dark:bg-slate-800/60 dark:text-slate-400 dark:border-slate-800'
                                   }`}
                                 >
-                                  {idx === 0 && isLeavingNow && (
-                                    <div className="absolute -top-2.5 -right-1 bg-rose-500 text-white text-[7px] sm:text-[9px] px-1 sm:px-1.5 py-0.5 rounded shadow-sm border border-rose-600 tracking-wider font-extrabold leading-none">
-                                      LEAVE
-                                    </div>
-                                  )}
-                                  
-                                  {/* Time */}
-                                  <div className="flex items-center gap-1 flex-shrink-0">
-                                    <Clock className="w-3 sm:w-3.5 h-3 sm:h-3.5 opacity-60" />
-                                    <span className="font-extrabold tracking-tight">{displayTime}</span>
+                                  {/* Top Area: Icon or LEAVE text */}
+                                  <div className="h-4 sm:h-5 flex items-center justify-center w-full mb-0.5">
+                                    {idx === 0 && isLeavingNow ? (
+                                      <span className="bg-rose-500 text-white text-[8px] sm:text-[9px] font-extrabold px-1.5 py-0.5 rounded tracking-widest leading-none animate-pulse shadow-sm">
+                                        LEAVE
+                                      </span>
+                                    ) : (
+                                      t.type === 'DD' ? (
+                                        <DoubleDeckerIcon className="w-4 h-4 sm:w-4.5 sm:h-4.5 text-brand-600 dark:text-brand-400 opacity-90" />
+                                      ) : t.type === 'BD' ? (
+                                        <BendyBusIcon className="w-4 h-4 sm:w-5 sm:h-4.5 text-amber-600 dark:text-amber-400 opacity-90" />
+                                      ) : (
+                                        <div className="w-4 h-4 sm:w-4.5 sm:h-4.5" /> /* Placeholder spacer for SD to maintain consistent height */
+                                      )
+                                    )}
                                   </div>
                                   
-                                  {/* Divider & Compact Indicators */}
-                                  <div className="flex items-center gap-1.5 border-l pl-1.5 border-slate-200 dark:border-slate-700">
-                                    {/* Crowd Level Dot */}
+                                  {/* Bottom Area: Time & Crowd */}
+                                  <div className="flex items-center gap-1.5">
+                                    <span className={`text-xs sm:text-sm font-black tracking-tighter ${isArr && 'text-emerald-600 dark:text-emerald-400'}`}>{displayTime}</span>
                                     <div 
-                                      className="flex items-center flex-shrink-0" 
+                                      className={`w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full flex-shrink-0 ${crowdColorClass}`} 
                                       title={`Crowd level: ${t.load === 'LSD' ? 'Crowded (No Seats)' : t.load === 'SDA' ? 'Standing Available' : 'Seats Available'}`}
-                                    >
-                                      <div className={`w-2 h-2 rounded-full ${crowdColorClass}`} />
-                                    </div>
-
-                                    {/* London Bus Type Icon - Skip for SD */}
-                                    {t.type !== 'SD' && t.type !== undefined && (
-                                      <div 
-                                        className="flex items-center text-slate-500 dark:text-slate-400 flex-shrink-0" 
-                                        title={t.type === 'DD' ? 'London-style Double Decker' : 'Bendy Bus'}
-                                      >
-                                        {t.type === 'DD' ? (
-                                          <DoubleDeckerIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 text-brand-600 dark:text-brand-400" />
-                                        ) : (
-                                          <BendyBusIcon className="w-4 h-3.5 sm:w-4.5 sm:h-4 text-amber-600 dark:text-amber-400" />
-                                        )}
-                                      </div>
-                                    )}
+                                    />
                                   </div>
                                 </div>
                               );
