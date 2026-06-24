@@ -323,11 +323,11 @@ export default function App() {
             </div>
           </div>
 
-          <div className="flex flex-col items-start gap-2 sm:items-end">
-            <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-2 rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 sm:flex sm:w-auto sm:flex-wrap sm:p-2">
+          <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:items-end">
+            <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1.5 rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 sm:flex sm:w-auto sm:flex-wrap sm:gap-2 sm:p-2">
               <button
                 onClick={() => setIsAutoRefresh(!isAutoRefresh)}
-                className={`min-h-11 rounded-xl px-3 py-2 text-xs font-semibold transition sm:min-h-0 sm:text-sm ${
+                className={`min-h-11 rounded-xl px-3 py-2 text-xs font-bold transition sm:min-h-0 sm:text-sm sm:font-semibold ${
                   isAutoRefresh
                     ? 'border border-emerald-200 bg-emerald-100 text-emerald-700 dark:border-emerald-500/20 dark:bg-emerald-500/15 dark:text-emerald-300'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-400 dark:hover:bg-slate-900'
@@ -354,7 +354,7 @@ export default function App() {
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 sm:gap-2 sm:text-xs">
+            <div className="flex flex-wrap items-center gap-1.5 text-[10px] text-slate-500 dark:text-slate-400 sm:justify-end sm:gap-2 sm:text-xs">
               <span className="rounded-full border border-slate-200/80 bg-white/70 px-2.5 py-1 font-medium shadow-sm backdrop-blur dark:border-slate-800 dark:bg-slate-900/60">
                 {liveStatusLabel}
               </span>
@@ -365,7 +365,7 @@ export default function App() {
           </div>
         </header>
 
-        <section className="mb-4 flex flex-col gap-2 rounded-3xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <section className="mb-4 flex flex-col gap-2 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:p-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
               Pages
@@ -380,7 +380,7 @@ export default function App() {
               type="button"
               aria-pressed={viewMode === 'board'}
               onClick={() => setViewMode('board')}
-              className={`min-h-12 rounded-2xl px-4 py-3 text-sm font-bold transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 ${
+              className={`min-h-12 rounded-2xl px-4 py-3 text-sm font-black transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 sm:font-bold ${
                 viewMode === 'board'
                   ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-950'
                   : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
@@ -392,7 +392,7 @@ export default function App() {
               type="button"
               aria-pressed={viewMode === 'info'}
               onClick={() => setViewMode('info')}
-              className={`min-h-12 rounded-2xl px-4 py-3 text-sm font-bold transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 ${
+              className={`min-h-12 rounded-2xl px-4 py-3 text-sm font-black transition sm:min-h-0 sm:rounded-full sm:px-3 sm:py-1.5 sm:font-bold ${
                 viewMode === 'info'
                   ? 'bg-slate-900 text-white shadow-sm dark:bg-white dark:text-slate-950'
                   : 'text-slate-500 hover:text-slate-950 dark:text-slate-400 dark:hover:text-white'
@@ -439,7 +439,7 @@ export default function App() {
           </div>
 
           <div className="grid gap-3 sm:grid-cols-2">
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Live overview
               </p>
@@ -452,7 +452,7 @@ export default function App() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Service counts
               </p>
@@ -465,7 +465,7 @@ export default function App() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Next departure
               </p>
@@ -478,7 +478,7 @@ export default function App() {
               </p>
             </div>
 
-            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
+            <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
                 Refresh cadence
               </p>
@@ -492,13 +492,13 @@ export default function App() {
             </div>
           </div>
 
-          <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6 lg:col-span-2">
+          <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6 lg:col-span-2">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
+                <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
                   Live stops
                 </p>
-                <p className="mt-1 text-sm text-slate-600 dark:text-slate-400">
+                <p className="mt-1 text-xs leading-5 text-slate-600 dark:text-slate-400 sm:text-sm">
                   A compact summary of the stops currently reporting.
                 </p>
               </div>
@@ -511,7 +511,7 @@ export default function App() {
               {visibleStopData.map((stopData) => {
                 const stop = STOPS.find((entry) => entry.id === stopData.stopCode);
                 return (
-                  <div key={stopData.stopCode} className="rounded-2xl border border-slate-200 bg-slate-50 p-3.5 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
+                  <div key={stopData.stopCode} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
                         <p className="text-sm font-semibold text-slate-950 dark:text-white">{stopData.name}</p>
@@ -541,7 +541,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className={viewMode === 'board' ? 'mb-4 rounded-3xl border border-slate-200 bg-white p-2.5 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:p-4' : 'hidden'}>
+        <section className={viewMode === 'board' ? 'mb-4 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:p-4' : 'hidden'}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
@@ -555,32 +555,32 @@ export default function App() {
               </p>
             </div>
 
-            <div className="grid w-full grid-cols-3 gap-1.5 lg:w-auto lg:min-w-[25rem]">
+            <div className="grid w-full grid-cols-3 gap-1 lg:w-auto lg:min-w-[25rem] lg:gap-1.5">
               <button
                 onClick={() => setActiveTab('morning')}
-                className={`min-h-11 rounded-2xl px-2 py-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${
+                className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-2xl px-1.5 py-2.5 text-xs font-black transition sm:min-h-11 sm:px-3 sm:text-sm sm:font-bold ${
                   activeTab === 'morning'
                     ? 'border border-amber-200 bg-amber-100 text-amber-700 shadow-sm dark:border-amber-500/30 dark:bg-amber-500/15 dark:text-amber-300'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
                 }`}
               >
-                <Sun className="mr-1.5 inline-block h-3.5 w-3.5" />
+                <Sun className="h-3.5 w-3.5 shrink-0" />
                 Morning
               </button>
               <button
                 onClick={() => setActiveTab('evening')}
-                className={`min-h-11 rounded-2xl px-2 py-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${
+                className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-2xl px-1.5 py-2.5 text-xs font-black transition sm:min-h-11 sm:px-3 sm:text-sm sm:font-bold ${
                   activeTab === 'evening'
                     ? 'border border-indigo-200 bg-indigo-100 text-indigo-700 shadow-sm dark:border-indigo-500/30 dark:bg-indigo-500/15 dark:text-indigo-300'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
                 }`}
               >
-                <Moon className="mr-1.5 inline-block h-3.5 w-3.5" />
+                <Moon className="h-3.5 w-3.5 shrink-0" />
                 Evening
               </button>
               <button
                 onClick={() => setActiveTab('all')}
-                className={`min-h-11 rounded-2xl px-2 py-2.5 text-xs font-bold transition sm:px-3 sm:text-sm ${
+                className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-2xl px-1.5 py-2.5 text-xs font-black transition sm:min-h-11 sm:px-3 sm:text-sm sm:font-bold ${
                   activeTab === 'all'
                     ? 'border border-slate-700 bg-slate-800 text-white shadow-sm'
                     : 'border border-slate-200 bg-slate-50 text-slate-600 hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/40 dark:text-slate-400 dark:hover:bg-slate-900'
@@ -696,12 +696,12 @@ export default function App() {
                           <div
                             key={bus.busNo}
                             className={`flex items-center gap-2 rounded-2xl py-2.5 transition-all first:pt-0 last:pb-0 sm:gap-2.5 sm:py-3 ${
-                              isTargetBus ? 'bg-brand-50/90 px-3 -mx-3 border border-brand-100 dark:bg-brand-500/10 dark:border-brand-500/10' : ''
+                              isTargetBus ? 'bg-brand-50/90 px-2 -mx-2 border border-brand-100 dark:bg-brand-500/10 dark:border-brand-500/10 sm:px-3 sm:-mx-3' : ''
                             }`}
                           >
                             <div className="flex shrink-0 items-center gap-1.5 sm:gap-2">
                               <div
-                                className={`flex h-9 min-w-[2.75rem] items-center justify-center rounded-2xl border px-1 text-sm font-extrabold transition sm:h-11 sm:min-w-[3.5rem] sm:px-2 sm:text-base ${
+                                className={`flex h-9 min-w-[2.65rem] items-center justify-center rounded-2xl border px-1 text-sm font-black transition sm:h-11 sm:min-w-[3.5rem] sm:px-2 sm:text-base ${
                                   isTargetBus
                                     ? 'border-brand-300 bg-brand-100 text-brand-700 shadow-sm dark:border-brand-500/40 dark:bg-brand-500/20 dark:text-brand-300 dark:shadow-brand-500/10'
                                     : 'border-slate-300 bg-slate-100 text-slate-700 dark:border-slate-700/60 dark:bg-slate-800 dark:text-slate-300'
@@ -713,8 +713,8 @@ export default function App() {
 
                             <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar py-0.5">
                               <div className="flex min-w-max items-center justify-end gap-1 sm:gap-1.5">
-                              {bus.timings.length > 0 ? (
-                                bus.timings.map((t, idx) => {
+                                {bus.timings.length > 0 ? (
+                                  bus.timings.map((t, idx) => {
                                   const isArr = t.mins === 'Arr';
                                   const displayTime = isArr ? 'Arr' : `${t.mins}m`;
                                   const timeToLeave = isArr ? -99 : (t.mins as number) - stop.walkTime;
@@ -765,13 +765,13 @@ export default function App() {
                                       </div>
                                     </div>
                                   );
-                                })
-                              ) : (
-                                <div className="flex flex-shrink-0 items-center gap-1.5 rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-[10px] text-slate-500 dark:border-slate-800/80 dark:bg-slate-800/50 dark:text-slate-400 sm:px-3 sm:py-1.5 sm:text-xs">
-                                  <AlertTriangle className="h-3 w-3 text-slate-400 dark:text-slate-500 sm:h-3.5 sm:w-3.5" />
-                                  Not operating
-                                </div>
-                              )}
+                                  })
+                                ) : (
+                                  <div className="flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] font-medium text-slate-500 dark:border-slate-800/80 dark:bg-slate-800/50 dark:text-slate-400 sm:px-3 sm:text-xs">
+                                    <AlertTriangle className="h-3 w-3 text-slate-400 dark:text-slate-500 sm:h-3.5 sm:w-3.5" />
+                                    Not operating
+                                  </div>
+                                )}
                             </div>
                           </div>
                         </div>
