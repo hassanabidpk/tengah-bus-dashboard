@@ -16,7 +16,7 @@ const STOPS: BusStop[] = [
   { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'], walkTime: 4 },
   { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'], walkTime: 4 },
   { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'], walkTime: 2 },
-  { id: '42151', name: 'Beauty World Stn Exit C', roadName: 'Jln Jurong Kechil', type: 'evening', guaranteed: ['452'], walkTime: 6 },
+  { id: '42151', name: 'Beauty World Stn Exit C', roadName: 'Jln Jurong Kechil', type: 'evening', guaranteed: ['871', '452'], walkTime: 6 },
   { id: '01519', name: 'The Gateway', roadName: 'Beach Rd', type: 'evening', guaranteed: ['57', '100', '107'], walkTime: 2 },
   { id: '28359', name: 'Blk 350', roadName: 'Boon Lay Way', type: 'evening', guaranteed: ['872'], walkTime: 3 },
   { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 8 },
@@ -41,6 +41,37 @@ interface StopData {
   source: string;
   buses: BusTimingInfo[];
 }
+
+interface RouteEstimate {
+  serviceNo: string;
+  fromStop: string;
+  toStop: string;
+  mins: number;
+}
+
+const estimateServiceTravelMins = (fromBus?: BusTimingInfo, toBus?: BusTimingInfo): number | null => {
+  if (!fromBus || !toBus) return null;
+
+  const paired = fromBus.timings
+    .map((fromTiming, index) => {
+      const toTiming = toBus.timings[index];
+      if (typeof fromTiming?.mins !== 'number' || typeof toTiming?.mins !== 'number') return null;
+      const diff = toTiming.mins - fromTiming.mins;
+      return diff > 0 ? diff : null;
+    })
+    .filter((mins): mins is number => typeof mins === 'number');
+
+  if (paired.length > 0) {
+    return Math.min(...paired);
+  }
+
+  const fromFirst = fromBus.timings.find((timing) => typeof timing.mins === 'number');
+  const toFirst = toBus.timings.find((timing) => typeof timing.mins === 'number');
+  if (!fromFirst || !toFirst || typeof fromFirst.mins !== 'number' || typeof toFirst.mins !== 'number') return null;
+
+  const fallback = toFirst.mins - fromFirst.mins;
+  return fallback > 0 ? fallback : null;
+};
 
 // Vintage London Bus Inspired SVGs
 const DoubleDeckerIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
@@ -169,7 +200,7 @@ export default function App() {
       
       const buses: BusTimingInfo[] = allBusNumbers
         .filter((busNo) => {
-          if (['03129', '28359', '43759', '43751'].includes(stop.id)) return stop.guaranteed.includes(busNo);
+          if (['03129', '28359', '43759', '43751', '42151'].includes(stop.id)) return stop.guaranteed.includes(busNo);
           return true;
         })
         .map((busNo) => ({
@@ -286,12 +317,30 @@ export default function App() {
     activeTab === 'morning'
       ? '🌅 Morning Commute is active! Take Bus 452 to Beauty World MRT, or take Bus 872 to Chinese Garden MRT.'
       : activeTab === 'evening'
-        ? '🌇 Evening Return is active! Board Bus 674 from UIC Building, or take Bus 452 from Beauty World Stn Exit C back to Tengah.'
+        ? '🌇 Evening Return is active! Board Bus 674 from UIC Building, or take Buses 871 and 452 from Beauty World Stn Exit C back to Tengah.'
         : '🚇 Ready for your commute? Toggle Morning or Evening modes to focus on specific routes, stops, and timings.';
 
   const liveStatusLabel = loading ? 'Syncing live feeds' : refreshing ? 'Refreshing network' : isAutoRefresh ? 'Auto-refresh live' : 'Manual refresh';
   const nextDepartureLabel = nextDeparture ? (nextDeparture.mins === 0 ? 'Arr' : `${nextDeparture.mins}m`) : '—';
   const lastUpdatedLabel = lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Awaiting first refresh';
+  const evening872Estimate: RouteEstimate | null = (() => {
+    if (activeTab !== 'evening') return null;
+
+    const fromStop = data['28359'];
+    const toStop = data['40489'];
+    const fromBus = fromStop?.buses.find((bus) => bus.busNo === '872');
+    const toBus = toStop?.buses.find((bus) => bus.busNo === '872');
+    const mins = estimateServiceTravelMins(fromBus, toBus);
+
+    if (mins == null) return null;
+
+    return {
+      serviceNo: '872',
+      fromStop: fromStop?.name ?? 'Blk 350',
+      toStop: toStop?.name ?? 'Opp Blk 113',
+      mins,
+    };
+  })();
 
   const stopAccentClass = (stopType: BusStop['type']) => {
     if (stopType === 'morning') return 'from-amber-400 via-orange-400 to-brand-500';
@@ -594,6 +643,34 @@ export default function App() {
           </div>
         </section>
 
+        {viewMode === 'board' && activeTab === 'evening' && (
+          <section className="mb-4 rounded-3xl border border-indigo-200 bg-indigo-50 p-3 shadow-sm dark:border-indigo-500/20 dark:bg-indigo-500/10 sm:mb-6 sm:p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-indigo-700 dark:text-indigo-300 sm:text-[11px]">
+                  Evening commute estimate
+                </p>
+                <h3 className="mt-1 text-sm font-black tracking-[-0.02em] text-indigo-950 dark:text-indigo-100 sm:text-base">
+                  {evening872Estimate ? `Bus ${evening872Estimate.serviceNo} · ${evening872Estimate.fromStop} → ${evening872Estimate.toStop}` : 'Bus 872 · Blk 350 → Opp Blk 113'}
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-indigo-900/70 dark:text-indigo-100/70 sm:text-sm">
+                  {evening872Estimate
+                    ? 'Estimated from live arrival gap between the same service at both stops.'
+                    : 'Waiting for live 872 timings at Blk 350 and Opp Blk 113.'}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-indigo-200 bg-white/80 px-3 py-2 text-right shadow-sm dark:border-indigo-400/20 dark:bg-slate-950/60">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-300">
+                  ETA to Opp Blk 113
+                </div>
+                <div className="mt-1 text-2xl font-black tracking-tight text-indigo-950 dark:text-white">
+                  {evening872Estimate ? `~${evening872Estimate.mins}m` : '—'}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
+
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
             <RefreshCw className="h-10 w-10 animate-spin text-brand-500" />
@@ -692,7 +769,7 @@ export default function App() {
                       {stopData?.buses.map((bus) => {
                         const isTargetBus =
                           (activeTab === 'morning' && ['872', '452', '871'].includes(bus.busNo)) ||
-                          (activeTab === 'evening' && ['674', '872', '57', '100', '107', '452'].includes(bus.busNo));
+                          (activeTab === 'evening' && ['674', '872', '57', '100', '107', '871', '452'].includes(bus.busNo));
 
                         return (
                           <div
