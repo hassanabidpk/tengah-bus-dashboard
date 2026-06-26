@@ -15,12 +15,37 @@ const STOPS: BusStop[] = [
   { id: '40389', name: 'Tengah CC', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['452', '674', '871', '992'], walkTime: 5 },
   { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'], walkTime: 4 },
   { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'], walkTime: 4 },
-  { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'], walkTime: 2 },
+  { id: '03111', name: 'Aft Capital Twr', roadName: 'Robinson Rd', type: 'morning', guaranteed: ['674'], walkTime: 2 },
+  { id: '28341', name: 'Chinese Gdn Stn', roadName: 'Boon Lay Way', type: 'morning', guaranteed: ['872'], walkTime: 2 },
+  { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674', '57', '100', '107'], walkTime: 2 },
   { id: '42151', name: 'Beauty World Stn Exit C', roadName: 'Jln Jurong Kechil', type: 'evening', guaranteed: ['871', '452'], walkTime: 6 },
   { id: '01519', name: 'The Gateway', roadName: 'Beach Rd', type: 'evening', guaranteed: ['57', '100', '107'], walkTime: 2 },
   { id: '28359', name: 'Blk 350', roadName: 'Boon Lay Way', type: 'evening', guaranteed: ['872'], walkTime: 3 },
   { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 8 },
   { id: '43751', name: 'Opp Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 8 },
+];
+
+interface EtaRoute {
+  fromStop: string;
+  toStop: string;
+  busNo: string;
+  defaultTravelMins: number;
+  label: string;
+  tab: 'morning' | 'evening';
+  accent: 'amber' | 'indigo' | 'emerald';
+}
+
+const ETA_ROUTES: EtaRoute[] = [
+  // Morning Commutes
+  { fromStop: '40389', toStop: '42151', busNo: '452', defaultTravelMins: 18, label: 'ETA to Beauty World', tab: 'morning', accent: 'amber' },
+  { fromStop: '40389', toStop: '03111', busNo: '674', defaultTravelMins: 22, label: 'ETA to Capital Tower', tab: 'morning', accent: 'amber' },
+  { fromStop: '40481', toStop: '28341', busNo: '872', defaultTravelMins: 11, label: 'ETA to Chinese Garden', tab: 'morning', accent: 'amber' },
+  
+  // Evening Commutes
+  { fromStop: '28359', toStop: '40489', busNo: '872', defaultTravelMins: 11, label: 'ETA to Tengah', tab: 'evening', accent: 'indigo' },
+  { fromStop: '01519', toStop: '03129', busNo: '107', defaultTravelMins: 10, label: 'ETA to UIC Bldg', tab: 'evening', accent: 'indigo' },
+  { fromStop: '01519', toStop: '03129', busNo: '57', defaultTravelMins: 10, label: 'ETA to UIC Bldg', tab: 'evening', accent: 'indigo' },
+  { fromStop: '01519', toStop: '03129', busNo: '100', defaultTravelMins: 10, label: 'ETA to UIC Bldg', tab: 'evening', accent: 'indigo' },
 ];
 
 interface Timing {
@@ -91,6 +116,46 @@ export default function App() {
     }
     return false;
   });
+
+  // Helper to calculate ETAs
+  const getEtaEstimate = (
+    fromStopCode: string,
+    toStopCode: string,
+    busNo: string,
+    defaultTravelMins: number
+  ) => {
+    const fromStop = data[fromStopCode];
+    const toStop = data[toStopCode];
+    const fromBus = fromStop?.buses.find((bus) => bus.busNo === busNo);
+    const toBus = toStop?.buses.find((bus) => bus.busNo === busNo);
+
+    if (!fromBus || !toBus || fromBus.timings.length === 0 || toBus.timings.length === 0) return null;
+
+    const nextTiming = fromBus.timings[0];
+    const nextArrivalMins = nextTiming.mins;
+    const fromVal = nextArrivalMins === 'Arr' ? 0 : nextArrivalMins;
+
+    const minDiff = Math.max(3, Math.floor(defaultTravelMins * 0.5));
+    const matchingToTiming = toBus.timings.find((t) => {
+      const toVal = t.mins === 'Arr' ? 0 : t.mins;
+      return toVal - fromVal >= minDiff;
+    });
+
+    let travelMins = defaultTravelMins;
+    let etaMins = fromVal + travelMins;
+
+    if (matchingToTiming) {
+      const toVal = matchingToTiming.mins === 'Arr' ? 0 : matchingToTiming.mins;
+      travelMins = toVal - fromVal;
+      etaMins = toVal;
+    }
+
+    return {
+      nextArrivalMins,
+      travelMins,
+      etaMins,
+    };
+  };
 
   useEffect(() => {
     if (isDark) {
@@ -170,7 +235,7 @@ export default function App() {
       
       const buses: BusTimingInfo[] = allBusNumbers
         .filter((busNo) => {
-          if (['03129', '28359', '43759', '43751', '42151'].includes(stop.id)) return stop.guaranteed.includes(busNo);
+          if (['03129', '28359', '43759', '43751', '42151', '03111', '28341'].includes(stop.id)) return stop.guaranteed.includes(busNo);
           return true;
         })
         .map((busNo) => ({
@@ -285,52 +350,14 @@ export default function App() {
 
   const routeMessage =
     activeTab === 'morning'
-      ? '🌅 Morning Commute is active! Take Bus 452 to Beauty World MRT, or take Bus 872 to Chinese Garden MRT.'
+      ? '🌅 Morning Commute is active! Track Bus 452 to Beauty World MRT, Bus 674 to Capital Tower, or Bus 872 to Chinese Garden MRT with live ETAs.'
       : activeTab === 'evening'
-        ? '🌇 Evening Return is active! Board Bus 674 from UIC Building, or take Buses 871 and 452 from Beauty World Stn Exit C back to Tengah.'
+        ? '🌇 Evening Return is active! Track Bus 107, 57, 100 to UIC Building, Bus 674 back to Tengah, or Bus 872 back to Tengah with live ETAs.'
         : '🚇 Ready for your commute? Toggle Morning or Evening modes to focus on specific routes, stops, and timings.';
 
   const liveStatusLabel = loading ? 'Syncing live feeds' : refreshing ? 'Refreshing network' : isAutoRefresh ? 'Auto-refresh live' : 'Manual refresh';
   const nextDepartureLabel = nextDeparture ? (nextDeparture.mins === 0 ? 'Arr' : `${nextDeparture.mins}m`) : '—';
   const lastUpdatedLabel = lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Awaiting first refresh';
-  const evening872Estimate: {
-    nextArrivalMins: number | 'Arr';
-    travelMins: number;
-    etaMins: number;
-  } | null = (() => {
-    if (activeTab !== 'evening') return null;
-
-    const fromStop = data['28359'];
-    const toStop = data['40489'];
-    const fromBus = fromStop?.buses.find((bus) => bus.busNo === '872');
-    const toBus = toStop?.buses.find((bus) => bus.busNo === '872');
-
-    if (!fromBus || !toBus || fromBus.timings.length === 0 || toBus.timings.length === 0) return null;
-
-    const nextTiming = fromBus.timings[0];
-    const nextArrivalMins = nextTiming.mins;
-    const fromVal = nextArrivalMins === 'Arr' ? 0 : nextArrivalMins;
-
-    const matchingToTiming = toBus.timings.find((t) => {
-      const toVal = t.mins === 'Arr' ? 0 : t.mins;
-      return toVal - fromVal >= 6;
-    });
-
-    let travelMins = 11;
-    let etaMins = fromVal + travelMins;
-
-    if (matchingToTiming) {
-      const toVal = matchingToTiming.mins === 'Arr' ? 0 : matchingToTiming.mins;
-      travelMins = toVal - fromVal;
-      etaMins = toVal;
-    }
-
-    return {
-      nextArrivalMins,
-      travelMins,
-      etaMins,
-    };
-  })();
 
   const stopAccentClass = (stopType: BusStop['type']) => {
     if (stopType === 'morning') return 'from-amber-400 via-orange-400 to-brand-500';
@@ -732,8 +759,16 @@ export default function App() {
                     <div className="divide-y divide-slate-100 dark:divide-slate-800/50">
                       {stopData?.buses.map((bus) => {
                         const isTargetBus =
-                          (activeTab === 'morning' && ['872', '452', '871'].includes(bus.busNo)) ||
+                          (activeTab === 'morning' && ['872', '452', '871', '674'].includes(bus.busNo)) ||
                           (activeTab === 'evening' && ['674', '872', '57', '100', '107', '871', '452'].includes(bus.busNo));
+
+                        // Find matching ETA route
+                        const etaRoute = ETA_ROUTES.find(
+                          (r) => r.fromStop === stop.id && r.busNo === bus.busNo && (activeTab === 'all' || r.tab === activeTab)
+                        );
+                        const etaEstimate = etaRoute
+                          ? getEtaEstimate(etaRoute.fromStop, etaRoute.toStop, etaRoute.busNo, etaRoute.defaultTravelMins)
+                          : null;
 
                         return (
                           <div
@@ -754,14 +789,32 @@ export default function App() {
                               </div>
                             </div>
 
-                            {stop.id === '28359' && bus.busNo === '872' && evening872Estimate && (
-                              <div className="flex flex-col justify-center pl-1.5 sm:pl-2 border-l border-indigo-200 dark:border-indigo-800/60 ml-1.5 sm:ml-2">
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 leading-none flex items-center gap-1">
-                                  <span className="h-1 w-1 rounded-full bg-indigo-500 animate-ping" />
-                                  ETA to Tengah
+                            {etaRoute && etaEstimate && (
+                              <div className={`flex flex-col justify-center pl-1.5 sm:pl-2 border-l ml-1.5 sm:ml-2 ${
+                                etaRoute.accent === 'amber'
+                                  ? 'border-amber-200 dark:border-amber-800/60'
+                                  : etaRoute.accent === 'indigo'
+                                    ? 'border-indigo-200 dark:border-indigo-800/60'
+                                    : 'border-emerald-200 dark:border-emerald-800/60'
+                              }`}>
+                                <span className={`text-[9px] font-bold uppercase tracking-wider leading-none flex items-center gap-1 ${
+                                  etaRoute.accent === 'amber'
+                                    ? 'text-amber-600 dark:text-amber-400'
+                                    : etaRoute.accent === 'indigo'
+                                      ? 'text-indigo-600 dark:text-indigo-400'
+                                      : 'text-emerald-600 dark:text-emerald-400'
+                                }`}>
+                                  <span className={`h-1 w-1 rounded-full animate-ping ${
+                                    etaRoute.accent === 'amber'
+                                      ? 'bg-amber-500'
+                                      : etaRoute.accent === 'indigo'
+                                        ? 'bg-indigo-500'
+                                        : 'bg-emerald-500'
+                                  }`} />
+                                  {etaRoute.label}
                                 </span>
                                 <span className="mt-0.5 text-[10px] font-black text-slate-900 dark:text-white leading-none sm:text-xs">
-                                  ~{evening872Estimate.etaMins}m <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400 normal-case">({evening872Estimate.travelMins}m trip)</span>
+                                  ~{etaEstimate.etaMins}m <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400 normal-case">({etaEstimate.travelMins}m trip)</span>
                                 </span>
                               </div>
                             )}
