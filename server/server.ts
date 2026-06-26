@@ -28,11 +28,32 @@ if (!ltaKey) {
   }
 }
 
+interface CacheEntry {
+  timestamp: number;
+  payload: {
+    source: string;
+    stopCode: string;
+    data: any;
+  };
+}
+
+const cache: Record<string, CacheEntry> = {};
+const CACHE_TTL_MS = 15000; // 15-second cache TTL
+
 // Endpoint to fetch bus arrival timings
 app.get('/api/bus-arrival', async (req: Request, res: Response): Promise<void> => {
   const stopCode = req.query.stopCode as string;
   if (!stopCode) {
     res.status(400).json({ error: 'stopCode parameter is required' });
+    return;
+  }
+
+  const now = Date.now();
+  if (cache[stopCode] && now - cache[stopCode].timestamp < CACHE_TTL_MS) {
+    res.json({
+      ...cache[stopCode].payload,
+      cached: true
+    });
     return;
   }
 
@@ -73,11 +94,18 @@ app.get('/api/bus-arrival', async (req: Request, res: Response): Promise<void> =
     }
   }
 
-  res.json({
+  const payload = {
     source: useLta ? 'LTA' : 'ArriveLah',
     stopCode,
     data
-  });
+  };
+
+  cache[stopCode] = {
+    timestamp: now,
+    payload
+  };
+
+  res.json(payload);
 });
 
 // Serve frontend in production
