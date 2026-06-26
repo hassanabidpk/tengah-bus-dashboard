@@ -42,6 +42,37 @@ interface StopData {
   buses: BusTimingInfo[];
 }
 
+interface RouteEstimate {
+  serviceNo: string;
+  fromStop: string;
+  toStop: string;
+  mins: number;
+}
+
+const estimateServiceTravelMins = (fromBus?: BusTimingInfo, toBus?: BusTimingInfo): number | null => {
+  if (!fromBus || !toBus) return null;
+
+  const paired = fromBus.timings
+    .map((fromTiming, index) => {
+      const toTiming = toBus.timings[index];
+      if (typeof fromTiming?.mins !== 'number' || typeof toTiming?.mins !== 'number') return null;
+      const diff = toTiming.mins - fromTiming.mins;
+      return diff > 0 ? diff : null;
+    })
+    .filter((mins): mins is number => typeof mins === 'number');
+
+  if (paired.length > 0) {
+    return Math.min(...paired);
+  }
+
+  const fromFirst = fromBus.timings.find((timing) => typeof timing.mins === 'number');
+  const toFirst = toBus.timings.find((timing) => typeof timing.mins === 'number');
+  if (!fromFirst || !toFirst || typeof fromFirst.mins !== 'number' || typeof toFirst.mins !== 'number') return null;
+
+  const fallback = toFirst.mins - fromFirst.mins;
+  return fallback > 0 ? fallback : null;
+};
+
 // Vintage London Bus Inspired SVGs
 const DoubleDeckerIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className} strokeLinecap="round" strokeLinejoin="round">
@@ -292,6 +323,24 @@ export default function App() {
   const liveStatusLabel = loading ? 'Syncing live feeds' : refreshing ? 'Refreshing network' : isAutoRefresh ? 'Auto-refresh live' : 'Manual refresh';
   const nextDepartureLabel = nextDeparture ? (nextDeparture.mins === 0 ? 'Arr' : `${nextDeparture.mins}m`) : '—';
   const lastUpdatedLabel = lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Awaiting first refresh';
+  const evening872Estimate: RouteEstimate | null = (() => {
+    if (activeTab !== 'evening') return null;
+
+    const fromStop = data['28359'];
+    const toStop = data['40489'];
+    const fromBus = fromStop?.buses.find((bus) => bus.busNo === '872');
+    const toBus = toStop?.buses.find((bus) => bus.busNo === '872');
+    const mins = estimateServiceTravelMins(fromBus, toBus);
+
+    if (mins == null) return null;
+
+    return {
+      serviceNo: '872',
+      fromStop: fromStop?.name ?? 'Blk 350',
+      toStop: toStop?.name ?? 'Opp Blk 113',
+      mins,
+    };
+  })();
 
   const stopAccentClass = (stopType: BusStop['type']) => {
     if (stopType === 'morning') return 'from-amber-400 via-orange-400 to-brand-500';
@@ -593,6 +642,34 @@ export default function App() {
             </div>
           </div>
         </section>
+
+        {viewMode === 'board' && activeTab === 'evening' && (
+          <section className="mb-4 rounded-3xl border border-indigo-200 bg-indigo-50 p-3 shadow-sm dark:border-indigo-500/20 dark:bg-indigo-500/10 sm:mb-6 sm:p-4">
+            <div className="flex items-start justify-between gap-3">
+              <div>
+                <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-indigo-700 dark:text-indigo-300 sm:text-[11px]">
+                  Evening commute estimate
+                </p>
+                <h3 className="mt-1 text-sm font-black tracking-[-0.02em] text-indigo-950 dark:text-indigo-100 sm:text-base">
+                  {evening872Estimate ? `Bus ${evening872Estimate.serviceNo} · ${evening872Estimate.fromStop} → ${evening872Estimate.toStop}` : 'Bus 872 · Blk 350 → Opp Blk 113'}
+                </h3>
+                <p className="mt-1 text-xs leading-5 text-indigo-900/70 dark:text-indigo-100/70 sm:text-sm">
+                  {evening872Estimate
+                    ? 'Estimated from live arrival gap between the same service at both stops.'
+                    : 'Waiting for live 872 timings at Blk 350 and Opp Blk 113.'}
+                </p>
+              </div>
+              <div className="rounded-2xl border border-indigo-200 bg-white/80 px-3 py-2 text-right shadow-sm dark:border-indigo-400/20 dark:bg-slate-950/60">
+                <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-300">
+                  ETA to Opp Blk 113
+                </div>
+                <div className="mt-1 text-2xl font-black tracking-tight text-indigo-950 dark:text-white">
+                  {evening872Estimate ? `~${evening872Estimate.mins}m` : '—'}
+                </div>
+              </div>
+            </div>
+          </section>
+        )}
 
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
