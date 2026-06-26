@@ -133,10 +133,11 @@ export default function App() {
 
   // Auto-set tab based on SGT time of day
   useEffect(() => {
-    const date = new Date();
-    const utc = date.getTime() + (date.getTimezoneOffset() * 60000);
-    const sgTime = new Date(utc + (3600000 * 8));
-    const hours = sgTime.getHours();
+    const hours = parseInt(new Intl.DateTimeFormat('en-US', {
+      timeZone: 'Asia/Singapore',
+      hour: 'numeric',
+      hour12: false
+    }).format(new Date()), 10);
 
     if (hours >= 6 && hours < 12) {
       setActiveTab('morning');
@@ -164,8 +165,6 @@ export default function App() {
           const timings: Timing[] = [];
           
           const now = new Date();
-          const utcNow = now.getTime() + (now.getTimezoneOffset() * 60000);
-          const sgtNow = new Date(utcNow + (3600000 * 8));
 
           ['NextBus', 'NextBus2', 'NextBus3'].forEach((key) => {
             const arrivalStr = s[key]?.EstimatedArrival;
@@ -173,7 +172,7 @@ export default function App() {
             const type = s[key]?.Type; // SD, DD, BD
             if (arrivalStr) {
               const arrivalDt = new Date(arrivalStr);
-              const diffMins = Math.floor((arrivalDt.getTime() - sgtNow.getTime()) / 60000);
+              const diffMins = Math.floor((arrivalDt.getTime() - now.getTime()) / 60000);
               timings.push({ mins: diffMins <= 0 ? 'Arr' : diffMins, load, type });
             }
           });
@@ -643,33 +642,7 @@ export default function App() {
           </div>
         </section>
 
-        {viewMode === 'board' && activeTab === 'evening' && (
-          <section className="mb-4 rounded-3xl border border-indigo-200 bg-indigo-50 p-3 shadow-sm dark:border-indigo-500/20 dark:bg-indigo-500/10 sm:mb-6 sm:p-4">
-            <div className="flex items-start justify-between gap-3">
-              <div>
-                <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-indigo-700 dark:text-indigo-300 sm:text-[11px]">
-                  Evening commute estimate
-                </p>
-                <h3 className="mt-1 text-sm font-black tracking-[-0.02em] text-indigo-950 dark:text-indigo-100 sm:text-base">
-                  {evening872Estimate ? `Bus ${evening872Estimate.serviceNo} · ${evening872Estimate.fromStop} → ${evening872Estimate.toStop}` : 'Bus 872 · Blk 350 → Opp Blk 113'}
-                </h3>
-                <p className="mt-1 text-xs leading-5 text-indigo-900/70 dark:text-indigo-100/70 sm:text-sm">
-                  {evening872Estimate
-                    ? 'Estimated from live arrival gap between the same service at both stops.'
-                    : 'Waiting for live 872 timings at Blk 350 and Opp Blk 113.'}
-                </p>
-              </div>
-              <div className="rounded-2xl border border-indigo-200 bg-white/80 px-3 py-2 text-right shadow-sm dark:border-indigo-400/20 dark:bg-slate-950/60">
-                <div className="text-[10px] font-semibold uppercase tracking-[0.24em] text-indigo-600 dark:text-indigo-300">
-                  ETA to Opp Blk 113
-                </div>
-                <div className="mt-1 text-2xl font-black tracking-tight text-indigo-950 dark:text-white">
-                  {evening872Estimate ? `~${evening872Estimate.mins}m` : '—'}
-                </div>
-              </div>
-            </div>
-          </section>
-        )}
+
 
         {loading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
@@ -789,6 +762,17 @@ export default function App() {
                                 {bus.busNo}
                               </div>
                             </div>
+
+                            {stop.id === '28359' && bus.busNo === '872' && evening872Estimate && (
+                              <div className="flex flex-col justify-center pl-1 sm:pl-2">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-500 dark:text-indigo-400 leading-none">
+                                  ETA to Tengah
+                                </span>
+                                <span className="mt-0.5 text-[10px] font-black text-slate-700 dark:text-slate-300 leading-none sm:text-xs">
+                                  ~{evening872Estimate.mins}m <span className="hidden xs:inline">to Opp Blk 113</span>
+                                </span>
+                              </div>
+                            )}
 
                             <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar py-0.5">
                               <div className="flex min-w-max items-center justify-end gap-1 sm:gap-1.5">
