@@ -42,36 +42,7 @@ interface StopData {
   buses: BusTimingInfo[];
 }
 
-interface RouteEstimate {
-  serviceNo: string;
-  fromStop: string;
-  toStop: string;
-  mins: number;
-}
 
-const estimateServiceTravelMins = (fromBus?: BusTimingInfo, toBus?: BusTimingInfo): number | null => {
-  if (!fromBus || !toBus) return null;
-
-  const paired = fromBus.timings
-    .map((fromTiming, index) => {
-      const toTiming = toBus.timings[index];
-      if (typeof fromTiming?.mins !== 'number' || typeof toTiming?.mins !== 'number') return null;
-      const diff = toTiming.mins - fromTiming.mins;
-      return diff > 0 ? diff : null;
-    })
-    .filter((mins): mins is number => typeof mins === 'number');
-
-  if (paired.length > 0) {
-    return Math.min(...paired);
-  }
-
-  const fromFirst = fromBus.timings.find((timing) => typeof timing.mins === 'number');
-  const toFirst = toBus.timings.find((timing) => typeof timing.mins === 'number');
-  if (!fromFirst || !toFirst || typeof fromFirst.mins !== 'number' || typeof toFirst.mins !== 'number') return null;
-
-  const fallback = toFirst.mins - fromFirst.mins;
-  return fallback > 0 ? fallback : null;
-};
 
 // Vintage London Bus Inspired SVGs
 const DoubleDeckerIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
@@ -322,22 +293,42 @@ export default function App() {
   const liveStatusLabel = loading ? 'Syncing live feeds' : refreshing ? 'Refreshing network' : isAutoRefresh ? 'Auto-refresh live' : 'Manual refresh';
   const nextDepartureLabel = nextDeparture ? (nextDeparture.mins === 0 ? 'Arr' : `${nextDeparture.mins}m`) : '—';
   const lastUpdatedLabel = lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Awaiting first refresh';
-  const evening872Estimate: RouteEstimate | null = (() => {
+  const evening872Estimate: {
+    nextArrivalMins: number | 'Arr';
+    travelMins: number;
+    etaMins: number;
+  } | null = (() => {
     if (activeTab !== 'evening') return null;
 
     const fromStop = data['28359'];
     const toStop = data['40489'];
     const fromBus = fromStop?.buses.find((bus) => bus.busNo === '872');
     const toBus = toStop?.buses.find((bus) => bus.busNo === '872');
-    const mins = estimateServiceTravelMins(fromBus, toBus);
 
-    if (mins == null) return null;
+    if (!fromBus || !toBus || fromBus.timings.length === 0 || toBus.timings.length === 0) return null;
+
+    const nextTiming = fromBus.timings[0];
+    const nextArrivalMins = nextTiming.mins;
+    const fromVal = nextArrivalMins === 'Arr' ? 0 : nextArrivalMins;
+
+    const matchingToTiming = toBus.timings.find((t) => {
+      const toVal = t.mins === 'Arr' ? 0 : t.mins;
+      return toVal - fromVal >= 6;
+    });
+
+    let travelMins = 11;
+    let etaMins = fromVal + travelMins;
+
+    if (matchingToTiming) {
+      const toVal = matchingToTiming.mins === 'Arr' ? 0 : matchingToTiming.mins;
+      travelMins = toVal - fromVal;
+      etaMins = toVal;
+    }
 
     return {
-      serviceNo: '872',
-      fromStop: fromStop?.name ?? 'Blk 350',
-      toStop: toStop?.name ?? 'Opp Blk 113',
-      mins,
+      nextArrivalMins,
+      travelMins,
+      etaMins,
     };
   })();
 
@@ -764,12 +755,13 @@ export default function App() {
                             </div>
 
                             {stop.id === '28359' && bus.busNo === '872' && evening872Estimate && (
-                              <div className="flex flex-col justify-center pl-1 sm:pl-2">
-                                <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-500 dark:text-indigo-400 leading-none">
+                              <div className="flex flex-col justify-center pl-1.5 sm:pl-2 border-l border-indigo-200 dark:border-indigo-800/60 ml-1.5 sm:ml-2">
+                                <span className="text-[9px] font-bold uppercase tracking-wider text-indigo-600 dark:text-indigo-400 leading-none flex items-center gap-1">
+                                  <span className="h-1 w-1 rounded-full bg-indigo-500 animate-ping" />
                                   ETA to Tengah
                                 </span>
-                                <span className="mt-0.5 text-[10px] font-black text-slate-700 dark:text-slate-300 leading-none sm:text-xs">
-                                  ~{evening872Estimate.mins}m <span className="hidden xs:inline">to Opp Blk 113</span>
+                                <span className="mt-0.5 text-[10px] font-black text-slate-900 dark:text-white leading-none sm:text-xs">
+                                  ~{evening872Estimate.etaMins}m <span className="text-[9px] font-medium text-slate-500 dark:text-slate-400 normal-case">({evening872Estimate.travelMins}m trip)</span>
                                 </span>
                               </div>
                             )}
