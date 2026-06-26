@@ -16,7 +16,7 @@ const STOPS: BusStop[] = [
   { id: '40481', name: 'Bef Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831W'], walkTime: 4 },
   { id: '40489', name: 'Opp Blk 113', roadName: 'Plantation Cres', type: 'morning', guaranteed: ['872', '831G'], walkTime: 4 },
   { id: '03129', name: 'UIC Bldg', roadName: 'Shenton Way', type: 'evening', guaranteed: ['674'], walkTime: 2 },
-  { id: '42151', name: 'Beauty World Stn Exit C', roadName: 'Jln Jurong Kechil', type: 'evening', guaranteed: ['452'], walkTime: 6 },
+  { id: '42151', name: 'Beauty World Stn Exit C', roadName: 'Jln Jurong Kechil', type: 'evening', guaranteed: ['871', '452'], walkTime: 6 },
   { id: '01519', name: 'The Gateway', roadName: 'Beach Rd', type: 'evening', guaranteed: ['57', '100', '107'], walkTime: 2 },
   { id: '28359', name: 'Blk 350', roadName: 'Boon Lay Way', type: 'evening', guaranteed: ['872'], walkTime: 3 },
   { id: '43759', name: 'Blk 443D (Outside Tengah)', roadName: 'Bt Batok Rd', type: 'both', guaranteed: ['180', '160', '984'], walkTime: 8 },
@@ -169,7 +169,7 @@ export default function App() {
       
       const buses: BusTimingInfo[] = allBusNumbers
         .filter((busNo) => {
-          if (['03129', '28359', '43759', '43751'].includes(stop.id)) return stop.guaranteed.includes(busNo);
+          if (['03129', '28359', '43759', '43751', '42151'].includes(stop.id)) return stop.guaranteed.includes(busNo);
           return true;
         })
         .map((busNo) => ({
@@ -286,7 +286,7 @@ export default function App() {
     activeTab === 'morning'
       ? '🌅 Morning Commute is active! Take Bus 452 to Beauty World MRT, or take Bus 872 to Chinese Garden MRT.'
       : activeTab === 'evening'
-        ? '🌇 Evening Return is active! Board Bus 674 from UIC Building, or take Bus 452 from Beauty World Stn Exit C back to Tengah.'
+        ? '🌇 Evening Return is active! Board Bus 674 from UIC Building, or take Buses 871 and 452 from Beauty World Stn Exit C back to Tengah.'
         : '🚇 Ready for your commute? Toggle Morning or Evening modes to focus on specific routes, stops, and timings.';
 
   const liveStatusLabel = loading ? 'Syncing live feeds' : refreshing ? 'Refreshing network' : isAutoRefresh ? 'Auto-refresh live' : 'Manual refresh';
@@ -692,7 +692,7 @@ export default function App() {
                       {stopData?.buses.map((bus) => {
                         const isTargetBus =
                           (activeTab === 'morning' && ['872', '452', '871'].includes(bus.busNo)) ||
-                          (activeTab === 'evening' && ['674', '872', '57', '100', '107', '452'].includes(bus.busNo));
+                          (activeTab === 'evening' && ['674', '872', '57', '100', '107', '871', '452'].includes(bus.busNo));
 
                         return (
                           <div
