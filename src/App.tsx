@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { MapPin, RefreshCw, Sun, Moon, Sparkles, AlertTriangle, Footprints } from 'lucide-react';
+import { MapPin, RefreshCw, Sun, Moon, Sparkles, AlertTriangle, Footprints, Train } from 'lucide-react';
 
 interface BusStop {
   id: string;
@@ -72,19 +72,21 @@ interface StopData {
 // Vintage London Bus Inspired SVGs
 const DoubleDeckerIcon = ({ className = "w-3.5 h-3.5" }: { className?: string }) => (
   <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" className={className} strokeLinecap="round" strokeLinejoin="round">
-    {/* Body */}
-    <path d="M2.5 16V4.5A1.5 1.5 0 0 1 4 3h15a2 2 0 0 1 2 2v11h1.5a.5.5 0 0 1 .5.5v1a.5.5 0 0 1-.5.5H2.5a.5.5 0 0 1-.5-.5v-1a.5.5 0 0 1 .5-.5z" />
-    {/* Mid divider */}
-    <path d="M2 10h19" />
-    {/* Upper Windows */}
-    <path d="M5 5.5h2.5v2.5H5zM9.5 5.5h3v2.5h-3zM14.5 5.5h3v2.5h-3z" />
-    {/* Lower Windows */}
-    <path d="M9.5 12h3v2.5h-3zM14.5 12h3v2.5h-3z" />
-    {/* Open platform / door at the back (left side is back) */}
-    <path d="M4 12h3v4H4z" />
+    {/* Modern bus body with rounded/aerodynamic front top */}
+    <path d="M3 17V4.5A1.5 1.5 0 0 1 4.5 3h13.5A2 2 0 0 1 20 5v12a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1z" />
+    {/* Mid-deck divider */}
+    <path d="M3 10h17" />
+    {/* Upper Deck Windows */}
+    <rect x="5" y="5.5" width="3" height="3" rx="0.5" />
+    <rect x="9.5" y="5.5" width="4" height="3" rx="0.5" />
+    <rect x="15" y="5.5" width="3.5" height="3" rx="0.5" />
+    {/* Lower Deck Windows */}
+    <rect x="5" y="12" width="3" height="3.5" rx="0.5" />
+    <rect x="9.5" y="12" width="4" height="3.5" rx="0.5" />
+    <rect x="15" y="12" width="3.5" height="3.5" rx="0.5" />
     {/* Wheels */}
-    <circle cx="7.5" cy="18.5" r="1.5" />
-    <circle cx="16.5" cy="18.5" r="1.5" />
+    <circle cx="7.5" cy="19" r="1.5" />
+    <circle cx="16.5" cy="19" r="1.5" />
   </svg>
 );
 
@@ -97,6 +99,195 @@ const BendyBusIcon = ({ className = "w-4 h-3.5" }: { className?: string }) => (
     <circle cx="21" cy="18" r="1.5" />
   </svg>
 );
+
+const TrainArrivalCard = () => {
+  const [timeLeft, setTimeLeft] = useState<{ next: string; subseq: string; model: string; modelDesc: string; isClosed: boolean }>({
+    next: '',
+    subseq: '',
+    model: '',
+    modelDesc: '',
+    isClosed: false
+  });
+
+  useEffect(() => {
+    const updateTiming = () => {
+      const now = new Date();
+      let hour = 0, min = 0, sec = 0, day = 0;
+      try {
+        const options: Intl.DateTimeFormatOptions = {
+          timeZone: 'Asia/Singapore',
+          hour: 'numeric',
+          minute: 'numeric',
+          second: 'numeric',
+          hour12: false
+        };
+        const parts = new Intl.DateTimeFormat('en-US', options).formatToParts(now);
+        hour = parseInt(parts.find(p => p.type === 'hour')?.value || '0', 10);
+        min = parseInt(parts.find(p => p.type === 'minute')?.value || '0', 10);
+        sec = parseInt(parts.find(p => p.type === 'second')?.value || '0', 10);
+        day = now.getDay();
+      } catch (e) {
+        hour = now.getHours();
+        min = now.getMinutes();
+        sec = now.getSeconds();
+        day = now.getDay();
+      }
+
+      const isSunday = day === 0;
+      const firstTrainHour = isSunday ? 6 : 5;
+      const firstTrainMin = isSunday ? 9 : 39;
+      
+      const lastTrainHour = 23;
+      const lastTrainMin = 39;
+
+      const totalSecsNow = hour * 3600 + min * 60 + sec;
+      const firstTrainSecs = firstTrainHour * 3600 + firstTrainMin * 60;
+      const lastTrainSecs = lastTrainHour * 3600 + lastTrainMin * 60;
+
+      const isClosed = totalSecsNow < firstTrainSecs || totalSecsNow > lastTrainSecs;
+
+      if (isClosed) {
+        setTimeLeft({
+          next: '--',
+          subseq: '--',
+          model: 'Service Closed',
+          modelDesc: `First Train: ${isSunday ? '06:09' : '05:39'} AM | Last Train: 23:39 PM`,
+          isClosed: true
+        });
+        return;
+      }
+
+      const isAMPeak = (hour === 7 && min >= 30) || hour === 8 || (hour === 9 && min <= 30);
+      const isPMPeak = (hour === 17 && min >= 30) || hour === 18 || (hour === 19 && min <= 30);
+      const isPeak = isAMPeak || isPMPeak;
+      
+      const intervalSecs = isPeak ? 150 : 270;
+
+      const elapsedSecsInInterval = totalSecsNow % intervalSecs;
+      const nextTrainSecs = intervalSecs - elapsedSecsInInterval;
+      const subseqTrainSecs = nextTrainSecs + intervalSecs;
+
+      const formatCountdown = (s: number) => {
+        if (s < 15) return 'Arr';
+        if (s < 60) return `${s}s`;
+        const m = Math.floor(s / 60);
+        const remS = s % 60;
+        return `${m}m ${remS}s`;
+      };
+
+      const trainModels = [
+        { name: 'Alstom Movia CR151', desc: '7th-Gen Train (Panoramic Windows, Quiet Run, Digital Maps)' },
+        { name: 'Kawasaki Heavy Industries C151', desc: '1st-Gen Train (Refurbished Classic, Built in Japan)' },
+        { name: 'Siemens C751B', desc: '3rd-Gen Train (Iconic Curved Front, Red/White Seats)' },
+        { name: 'Kawasaki-Sifang C151A', desc: '4th-Gen Train (Workhorse of EWL, Modern LED Lighting)' }
+      ];
+      
+      const blockIndex = Math.floor(totalSecsNow / 600) % trainModels.length;
+      const activeModel = trainModels[blockIndex];
+
+      setTimeLeft({
+        next: formatCountdown(nextTrainSecs),
+        subseq: formatCountdown(subseqTrainSecs),
+        model: activeModel.name,
+        modelDesc: activeModel.desc,
+        isClosed: false
+      });
+    };
+
+    updateTiming();
+    const interval = setInterval(updateTiming, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="relative overflow-hidden rounded-3xl border border-emerald-500/20 bg-emerald-50/10 shadow-lg shadow-emerald-950/5 transition hover:-translate-y-0.5 hover:border-emerald-500/30 dark:border-emerald-500/10 dark:bg-emerald-950/5 dark:hover:border-emerald-500/20 sm:shadow-2xl">
+      <div className="absolute inset-x-0 top-0 h-1 bg-gradient-to-r from-emerald-500 via-teal-500 to-green-500" />
+      
+      <div className="flex flex-col gap-3 border-b border-slate-100 px-3 py-3 dark:border-slate-800/50 sm:px-5 sm:py-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="flex items-start gap-2.5 sm:gap-3">
+          <div className="flex-shrink-0 rounded-2xl border border-emerald-200 bg-emerald-100 p-1.5 text-emerald-600 dark:border-emerald-500/20 dark:bg-emerald-500/10 dark:text-emerald-400 sm:p-2">
+            <Train className="h-4 w-4 sm:h-5 sm:w-5" />
+          </div>
+
+          <div>
+            <span className="inline-flex rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-[9px] font-bold uppercase tracking-[0.2em] text-emerald-600 dark:border-emerald-500/10 dark:bg-emerald-500/10 dark:text-emerald-400 sm:px-2.5 sm:py-1 sm:text-[10px]">
+              East-West Line
+            </span>
+            <h3 className="mt-1.5 text-[15px] font-black leading-snug tracking-[-0.02em] text-slate-950 dark:text-slate-100 sm:mt-2 sm:text-base md:text-lg">
+              Chinese Garden MRT (EW25)
+            </h3>
+            <p className="mt-1 text-[10px] text-slate-500 dark:text-slate-400 sm:text-xs">
+              Platform A · Train to City (towards Pasir Ris)
+            </p>
+          </div>
+        </div>
+
+        <div className="flex items-center gap-2 sm:gap-3 col-span-2 md:col-span-1 justify-between md:justify-end">
+          <div className="text-right">
+            <span className="block text-[9px] font-mono uppercase tracking-wider text-slate-500 dark:text-slate-400 sm:text-[10px]">
+              Station
+            </span>
+            <div className="text-base font-black tracking-[0.18em] text-emerald-600 dark:text-emerald-400 sm:text-lg">
+              EW25
+            </div>
+          </div>
+          <span className="rounded-full border border-emerald-200 bg-emerald-50 px-2.5 py-0.5 text-[9px] font-bold uppercase tracking-wider text-emerald-600 dark:border-emerald-500/10 dark:bg-emerald-500/10 dark:text-emerald-400 sm:text-[10px]">
+            Live Schedule
+          </span>
+        </div>
+      </div>
+
+      <div className="px-3 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+        <div className="mb-3 flex items-center justify-between">
+          <div>
+            <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-emerald-600 dark:text-emerald-400 sm:text-[11px]">
+              Next Train Arrival
+            </p>
+            <p className="mt-0.5 text-[11px] text-slate-500 dark:text-slate-400 sm:mt-1 sm:text-xs">
+              Estimated based on peak/off-peak frequencies
+            </p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
+          <div className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800/40 dark:bg-slate-950/20">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Next Train</span>
+              <span className="h-2 w-2 rounded-full bg-emerald-500 animate-ping" />
+            </div>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className={`text-2xl font-black font-mono tracking-tight sm:text-3xl ${timeLeft.next === 'Arr' ? 'text-emerald-600 dark:text-emerald-400' : 'text-slate-900 dark:text-white'}`}>
+                {timeLeft.next}
+              </span>
+            </div>
+          </div>
+
+          <div className="flex flex-col gap-2 rounded-2xl border border-slate-100 bg-slate-50/50 p-3 dark:border-slate-800/40 dark:bg-slate-950/20">
+            <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">Subsequent</span>
+            <div className="mt-1 flex items-baseline gap-1.5">
+              <span className="text-2xl font-black font-mono tracking-tight text-slate-600 dark:text-slate-300 sm:text-3xl">
+                {timeLeft.subseq}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-3 rounded-2xl border border-emerald-500/10 bg-emerald-500/5 p-3 dark:border-emerald-500/5 dark:bg-emerald-500/5">
+          <div className="flex items-center gap-1.5 text-[10px] font-bold uppercase tracking-wider text-emerald-600 dark:text-emerald-400">
+            <Train className="h-3.5 w-3.5" />
+            Expected Train Model
+          </div>
+          <p className="mt-1 text-xs font-black text-slate-800 dark:text-white">
+            {timeLeft.model}
+          </p>
+          <p className="mt-0.5 text-[10.5px] leading-relaxed text-slate-500 dark:text-slate-400">
+            {timeLeft.modelDesc}
+          </p>
+        </div>
+      </div>
+    </div>
+  );
+};
 
 export default function App() {
   const [data, setData] = useState<Record<string, StopData>>({});
@@ -671,6 +862,7 @@ export default function App() {
           </div>
         ) : (
           <div className="grid grid-cols-1 gap-3 sm:gap-5 lg:grid-cols-2">
+            {(activeTab === 'morning' || activeTab === 'all') && <TrainArrivalCard />}
             {filteredStops.map((stop) => {
               const stopData = data[stop.id];
 
@@ -819,7 +1011,7 @@ export default function App() {
                               </div>
                             )}
 
-                            <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar py-0.5">
+                            <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar py-2">
                               <div className="flex min-w-max items-center justify-end gap-1 sm:gap-1.5">
                                 {bus.timings.length > 0 ? (
                                   bus.timings.map((t, idx) => {
@@ -847,6 +1039,12 @@ export default function App() {
                                           : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400'
                                       }`}
                                     >
+                                      {idx === 0 && isLeavingNow && (
+                                        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full bg-rose-500 px-1.5 py-0.5 text-[7px] font-extrabold leading-none tracking-widest text-white shadow-sm sm:text-[8px] z-10">
+                                          LEAVE
+                                        </span>
+                                      )}
+
                                       <div className="relative mb-0.5 flex h-5 w-full items-center justify-center sm:h-5">
                                         {t.type === 'DD' ? (
                                           <DoubleDeckerIcon className="h-4 w-4 text-slate-500 opacity-90 dark:text-slate-300" />
@@ -854,11 +1052,6 @@ export default function App() {
                                           <BendyBusIcon className="h-4 w-4 text-slate-500 opacity-90 sm:h-4.5 sm:w-5 dark:text-slate-300" />
                                         ) : (
                                           <div className="h-4 w-4 sm:h-4.5 sm:w-4.5" />
-                                        )}
-                                        {idx === 0 && isLeavingNow && (
-                                          <span className="absolute -bottom-1 left-1/2 -translate-x-1/2 rounded-full bg-rose-500 px-1.5 py-0.5 text-[7px] font-extrabold leading-none tracking-widest text-white shadow-sm sm:text-[8px]">
-                                            LEAVE
-                                          </span>
                                         )}
                                       </div>
 
