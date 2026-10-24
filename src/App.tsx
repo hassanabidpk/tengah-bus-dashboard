@@ -1,4 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
+import { getDepartureGuidance, BOARDING_BUFFER_MINS } from './departureGuidance';
 import { MapPin, RefreshCw, Sun, Moon, Sparkles, AlertTriangle, Footprints } from 'lucide-react';
 
 interface BusStop {
@@ -311,10 +312,12 @@ export default function App() {
     stopName: string;
   } | null>((best, stopData) => {
     stopData.buses.forEach((bus) => {
-      const firstTiming = bus.timings[0];
-      if (!firstTiming) return;
+      const stop = STOPS.find(entry => entry.id === stopData.stopCode);
+      if (!stop) return;
+      const departure = getDepartureGuidance(bus.timings, stop.walkTime);
+      if (!departure) return;
 
-      const mins = firstTiming.mins === 'Arr' ? 0 : firstTiming.mins;
+      const mins = departure.arrivalMins;
       if (!best || mins < best.mins) {
         best = {
           mins,
@@ -378,19 +381,19 @@ export default function App() {
   return (
     <div className="min-h-screen bg-white text-slate-950 dark:bg-[#090a0b] dark:text-slate-100">
       <div className="relative mx-auto max-w-7xl px-3 py-3 sm:px-6 sm:py-8">
-        <header className="mb-4 flex flex-col gap-3 sm:mb-6 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <header className="commute-header mb-2 flex flex-col gap-2 sm:mb-6 sm:gap-4 lg:flex-row lg:items-end lg:justify-between">
           <div className="max-w-3xl">
-            <div className="inline-flex items-center gap-2 rounded-full border border-brand-400/20 bg-slate-900/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-200 shadow-lg shadow-brand-500/10 backdrop-blur sm:text-xs">
+            <div className="hidden sm:inline-flex items-center gap-2 rounded-full border border-brand-400/20 bg-slate-900/75 px-3 py-1.5 text-[10px] font-semibold uppercase tracking-[0.24em] text-brand-200 shadow-lg shadow-brand-500/10 backdrop-blur sm:text-xs">
               <span className="h-2 w-2 rounded-full bg-emerald-400 animate-pulse" />
               Tengah Commute Tracker
             </div>
 
-            <div className="mt-3 space-y-1.5 sm:mt-4 sm:space-y-2">
+            <div className="space-y-1.5 sm:mt-4 sm:space-y-2">
               <h1 className="text-2xl font-black leading-[1.05] tracking-[-0.045em] text-slate-950 dark:text-white sm:text-4xl md:text-5xl">
                 Plantation Cres Live Board
               </h1>
-              <p className="max-w-2xl text-[13px] leading-5 text-slate-600 dark:text-slate-400 sm:text-base sm:leading-relaxed">
-                A polished, live bus dashboard for Tengah residents — tuned for quick morning decisions, evening returns, and everything in between.
+              <p className="hidden max-w-2xl text-slate-600 dark:text-slate-400 sm:block sm:text-base sm:leading-relaxed">
+                Live arrivals for your morning commute and evening return.
               </p>
             </div>
           </div>
@@ -398,6 +401,8 @@ export default function App() {
           <div className="flex w-full flex-col items-start gap-2 sm:w-auto sm:items-end">
             <div className="grid w-full grid-cols-[1fr_auto_auto] items-center gap-1.5 rounded-2xl border border-slate-200/80 bg-white/80 p-1.5 shadow-lg backdrop-blur dark:border-slate-800 dark:bg-slate-900/70 sm:flex sm:w-auto sm:flex-wrap sm:gap-2 sm:p-2">
               <button
+                aria-pressed={isAutoRefresh}
+                aria-label="Auto-refresh arrivals"
                 onClick={() => setIsAutoRefresh(!isAutoRefresh)}
                 className={`min-h-11 rounded-xl px-3 py-2 text-xs font-bold transition sm:min-h-0 sm:text-sm sm:font-semibold ${
                   isAutoRefresh
@@ -412,6 +417,7 @@ export default function App() {
                 onClick={refreshAll}
                 disabled={refreshing}
                 className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 transition hover:bg-slate-100 disabled:opacity-50 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-900 sm:min-h-0 sm:min-w-0"
+                aria-label="Refresh now"
                 title="Refresh now"
               >
                 <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin text-brand-500 dark:text-brand-400' : ''}`} />
@@ -420,6 +426,8 @@ export default function App() {
               <button
                 onClick={() => setIsDark(!isDark)}
                 className="flex min-h-11 min-w-11 items-center justify-center rounded-xl border border-slate-200 bg-slate-50 p-2 text-slate-700 transition hover:bg-slate-100 dark:border-slate-800 dark:bg-slate-950/50 dark:text-slate-200 dark:hover:bg-slate-900 sm:min-h-0 sm:min-w-0"
+                aria-label="Toggle dark mode"
+                aria-pressed={isDark}
                 title="Toggle dark mode"
               >
                 {isDark ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
@@ -437,7 +445,7 @@ export default function App() {
           </div>
         </header>
 
-        <section className="mb-4 flex flex-col gap-2 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:p-4">
+        <section className="board-navigation mb-2 flex flex-col gap-2 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:flex-row sm:items-center sm:justify-between sm:p-4">
           <div>
             <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
               Pages
@@ -539,11 +547,11 @@ export default function App() {
 
             <div className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
               <p className="text-[11px] font-semibold uppercase tracking-[0.28em] text-slate-500 dark:text-slate-400">
-                Next departure
+                Next catchable bus
               </p>
               <div className="mt-3 flex items-baseline gap-2">
                 <span className="text-2xl font-black tracking-tight text-slate-950 dark:text-white sm:text-3xl">{nextDepartureLabel}</span>
-                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">fastest pull</span>
+                <span className="text-xs font-medium text-slate-500 dark:text-slate-400">includes walking buffer</span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
                 {nextDeparture ? `${nextDeparture.busNo} · ${nextDeparture.stopName}` : 'Waiting for fresh data.'}
@@ -613,7 +621,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className={viewMode === 'board' ? 'mb-4 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:p-4' : 'hidden'}>
+        <section aria-label="Commute mode" className={viewMode === 'board' ? 'mode-navigation mb-3 rounded-3xl border border-slate-200 bg-white p-2 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:mb-6 sm:p-4' : 'hidden'}>
           <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
@@ -629,6 +637,7 @@ export default function App() {
 
             <div className="grid w-full grid-cols-3 gap-1 lg:w-auto lg:min-w-[25rem] lg:gap-1.5">
               <button
+                aria-pressed={activeTab === 'morning'}
                 onClick={() => setActiveTab('morning')}
                 className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-2xl px-1.5 py-2.5 text-xs font-black transition sm:min-h-11 sm:px-3 sm:text-sm sm:font-bold ${
                   activeTab === 'morning'
@@ -640,6 +649,7 @@ export default function App() {
                 Morning
               </button>
               <button
+                aria-pressed={activeTab === 'evening'}
                 onClick={() => setActiveTab('evening')}
                 className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-2xl px-1.5 py-2.5 text-xs font-black transition sm:min-h-11 sm:px-3 sm:text-sm sm:font-bold ${
                   activeTab === 'evening'
@@ -651,6 +661,7 @@ export default function App() {
                 Evening
               </button>
               <button
+                aria-pressed={activeTab === 'all'}
                 onClick={() => setActiveTab('all')}
                 className={`flex min-h-12 min-w-0 items-center justify-center gap-1 rounded-2xl px-1.5 py-2.5 text-xs font-black transition sm:min-h-11 sm:px-3 sm:text-sm sm:font-bold ${
                   activeTab === 'all'
@@ -674,7 +685,7 @@ export default function App() {
             </p>
           </div>
         ) : (
-          <div className="grid grid-cols-1 gap-3 sm:gap-5 lg:grid-cols-2">
+          <div data-testid="arrival-board" className="grid grid-cols-1 gap-3 sm:gap-5 lg:grid-cols-2">
             {filteredStops.map((stop) => {
               const stopData = data[stop.id];
 
@@ -766,6 +777,8 @@ export default function App() {
                           (activeTab === 'morning' && ['872', '452', '871', '674'].includes(bus.busNo)) ||
                           (activeTab === 'evening' && ['674', '872', '57', '100', '107', '871', '452'].includes(bus.busNo));
 
+                        const departure = getDepartureGuidance(bus.timings, stop.walkTime);
+
                         // Find matching ETA route
                         const etaRoute = ETA_ROUTES.find(
                           (r) => r.fromStop === stop.id && r.busNo === bus.busNo && (activeTab === 'all' || r.tab === activeTab)
@@ -824,13 +837,21 @@ export default function App() {
                             )}
 
                             <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar py-2">
+                              {bus.timings.length > 0 && (
+                                <p className="mb-1 text-right text-[11px] font-semibold leading-4 text-slate-600 dark:text-slate-300" data-testid="departure-guidance">
+                                  {departure
+                                    ? `${departure.index > 0 ? 'Too soon to walk · ' : ''}Next catchable bus ${departure.arrivalMins}m · ${departure.status === 'leave-now' ? 'Leave now' : `leave in ${departure.leaveInMins}m`}`
+                                    : 'Too soon to walk · wait for later arrivals'}
+                                </p>
+                              )}
                               <div className="flex min-w-max items-center justify-end gap-1 sm:gap-1.5">
                                 {bus.timings.length > 0 ? (
                                   bus.timings.map((t, idx) => {
                                   const isArr = t.mins === 'Arr';
                                   const displayTime = isArr ? 'Arr' : `${t.mins}m`;
-                                  const timeToLeave = isArr ? -99 : (t.mins as number) - stop.walkTime;
-                                  const isLeavingNow = timeToLeave >= -2 && timeToLeave <= 3;
+                                  const isCatchable = departure?.index === idx;
+                                  const isLeavingNow = isCatchable && departure?.status === 'leave-now';
+                                  const tooSoonToWalk = isArr || (typeof t.mins === 'number' && t.mins < stop.walkTime + BOARDING_BUFFER_MINS);
                                   const crowdColorClass =
                                     t.load === 'LSD'
                                       ? 'bg-rose-500 shadow-[0_0_6px_rgba(244,63,94,0.5)]'
@@ -841,19 +862,19 @@ export default function App() {
                                   return (
                                     <div
                                       key={idx}
+                                      aria-label={`${displayTime}; ${tooSoonToWalk ? 'too soon to walk from your starting point' : isCatchable ? 'next catchable bus' : 'later arrival'}`}
+                                      title={tooSoonToWalk ? 'Too soon to walk — choose a later bus' : isCatchable ? 'Next catchable bus, including a 1-minute boarding buffer' : 'Later arrival'}
                                       className={`relative flex min-w-[2.55rem] flex-col items-center justify-center rounded-lg border px-1.5 py-1.5 font-mono shadow-sm transition sm:min-w-[3.2rem] sm:px-2 sm:py-2 ${
-                                        idx === 0
-                                          ? isArr
-                                            ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-500/30 dark:bg-emerald-600/20 dark:text-emerald-400'
-                                            : isLeavingNow
-                                              ? 'border-rose-300 bg-rose-50 text-rose-700 ring-1 ring-rose-400 dark:border-rose-500/30 dark:bg-rose-600/20 dark:text-rose-400 dark:ring-rose-500/50'
-                                              : 'border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/20 dark:text-brand-300'
+                                        isCatchable
+                                          ? isLeavingNow
+                                            ? 'border-rose-300 bg-rose-50 text-rose-700 ring-1 ring-rose-400 dark:border-rose-500/30 dark:bg-rose-600/20 dark:text-rose-400 dark:ring-rose-500/50'
+                                            : 'border-brand-200 bg-brand-50 text-brand-700 dark:border-brand-500/30 dark:bg-brand-500/20 dark:text-brand-300'
                                           : 'border-slate-200 bg-white text-slate-600 dark:border-slate-800 dark:bg-slate-800/60 dark:text-slate-400'
                                       }`}
                                     >
-                                      {idx === 0 && isLeavingNow && (
-                                        <span className="absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full bg-rose-500 px-1.5 py-0.5 text-[7px] font-extrabold leading-none tracking-widest text-white shadow-sm sm:text-[8px] z-10">
-                                          LEAVE
+                                      {isCatchable && (
+                                        <span className={`absolute -top-1.5 left-1/2 -translate-x-1/2 rounded-full px-1.5 py-0.5 text-[8px] font-extrabold leading-none tracking-widest text-white shadow-sm z-10 ${isLeavingNow ? 'bg-rose-500' : 'bg-brand-600'}`}>
+                                          {isLeavingNow ? 'LEAVE' : 'NEXT'}
                                         </span>
                                       )}
 
