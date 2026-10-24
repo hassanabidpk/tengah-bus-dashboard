@@ -17,6 +17,40 @@
   }
 }
 
+/* Keep commute controls compact without shrinking touch targets. */
+@media (max-width: 639px) {
+  .board-navigation > div:first-child,
+  .mode-navigation > div > div:first-child {
+    display: none;
+  }
+
+  .board-navigation {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .board-navigation button {
+    min-height: 44px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+
+  .mode-navigation {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    box-shadow: none;
+  }
+
+  .mode-navigation button {
+    min-height: 44px;
+    padding-top: 8px;
+    padding-bottom: 8px;
+  }
+}
+
 @layer utilities {
   .no-scrollbar {
     -ms-overflow-style: none;

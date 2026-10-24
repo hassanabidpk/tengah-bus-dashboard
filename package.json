@@ -4,6 +4,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
+    "test": "node --test tests/*.test.cjs",
     "dev:frontend": "vite",
     "dev:backend": "nodemon --watch server --ext ts --exec ts-node server/server.ts",
     "dev": "concurrently \"npm run dev:backend\" \"npm run dev:frontend\"",
