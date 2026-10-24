@@ -1,39 +1,45 @@
-const CACHE_NAME = 'tengah-bus-dashboard-v4';
-const STATIC_CACHE_NAME = 'tengah-bus-static-assets-v4';
+// Deploy-stamped cache names: __DEPLOY_VERSION__ is replaced at build time by
+// the Vite plugin in vite.config.ts, so every deploy ships a byte-different
+// worker that purges all previous caches on activation.
+const CACHE_NAME = 'tengah-bus-dashboard-v5-__DEPLOY_VERSION__';
+const STATIC_CACHE_NAME = 'tengah-bus-static-assets-v5-__DEPLOY_VERSION__';
+// Only purge caches this app owns; leave unrelated origins' caches alone.
+const OWNED_CACHE_PREFIX = 'tengah-bus-';
 
-// Install Event
 self.addEventListener('install', (event) => {
-  // Force the waiting service worker to become active immediately
   self.skipWaiting();
 });
 
-// Activate Event
 self.addEventListener('activate', (event) => {
   event.waitUntil(
-    caches.keys().then((keys) => {
-      return Promise.all(
-        keys
-          .filter((key) => key !== CACHE_NAME && key !== STATIC_CACHE_NAME)
-          .map((key) => caches.delete(key))
-      );
-    }).then(() => {
-      // Take control of all pages immediately so they don't have to reload
-      return self.clients.claim();
-    })
+    caches
+      .keys()
+      .then((keys) =>
+        Promise.all(
+          keys
+            .filter(
+              (key) =>
+                key.startsWith(OWNED_CACHE_PREFIX) &&
+                key !== CACHE_NAME &&
+                key !== STATIC_CACHE_NAME
+            )
+            .map((key) => caches.delete(key))
+        )
+      )
+      .then(() => self.clients.claim())
   );
 });
 
-// Fetch Event
 self.addEventListener('fetch', (event) => {
   const url = new URL(event.request.url);
 
-  // 1. NEVER cache sw.js or manifest.json (always bypass cache to prevent lock-in)
+  // 1. Never cache the worker or manifest — updates must always come from network.
   if (url.pathname === '/sw.js' || url.pathname === '/manifest.json') {
     event.respondWith(fetch(event.request));
     return;
   }
 
-  // 2. Network-first for API timings
+  // 2. Network-first for API timings.
   if (url.pathname.startsWith('/api/')) {
     event.respondWith(
       fetch(event.request).catch(() => caches.match(event.request))
@@ -41,9 +47,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Network-first for the entry point (index.html)
-  // This ensures the browser always gets the latest HTML which points to the new hashed JS files.
-  // Falls back to cache only when offline.
+  // 3. Network-first for the entry point so new hashed bundles are discovered.
   if (url.pathname === '/' || url.pathname === '/index.html') {
     event.respondWith(
       fetch(event.request)
@@ -57,7 +61,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 4. Cache-first for compiled assets (Vite hashed JS/CSS are immutable)
+  // 4. Cache-first for hashed, immutable Vite assets.
   if (url.pathname.includes('/assets/')) {
     event.respondWith(
       caches.match(event.request).then((cachedResponse) => {
@@ -72,7 +76,7 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 5. Stale-While-Revalidate for non-hashed public assets (like icon.svg)
+  // 5. Stale-while-revalidate for non-hashed public assets (icon.svg).
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       const networkFetch = fetch(event.request).then((response) => {
