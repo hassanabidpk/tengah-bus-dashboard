@@ -13,9 +13,24 @@
     <script>
       if ('serviceWorker' in navigator) {
         window.addEventListener('load', () => {
-          navigator.serviceWorker.register('/sw.js')
-            .then((reg) => console.log('Service Worker registered successfully:', reg.scope))
+          navigator.serviceWorker
+            .register('/sw.js')
+            .then((reg) => {
+              console.log('Service Worker registered successfully:', reg.scope);
+              // Poll for worker updates so deploys reach already-open tabs.
+              reg.update().catch(() => {});
+              setInterval(() => reg.update().catch(() => {}), 15 * 60 * 1000);
+            })
             .catch((err) => console.error('Service Worker registration failed:', err));
+
+          // Reload exactly once when a newly deployed worker takes control,
+          // so users always land on the current release.
+          navigator.serviceWorker.addEventListener('controllerchange', () => {
+            if (!sessionStorage.getItem('SW_RELOADED')) {
+              sessionStorage.setItem('SW_RELOADED', '1');
+              window.location.reload();
+            }
+          });
         });
       }
     </script>
