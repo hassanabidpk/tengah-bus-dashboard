@@ -1,5 +1,7 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { getDepartureGuidance, BOARDING_BUFFER_MINS } from './departureGuidance';
+import { mergeFeedResults, isFeedStale } from './feedState';
+import type { FeedState } from './feedState';
 import { MapPin, RefreshCw, Sun, Moon, Sparkles, AlertTriangle, Footprints } from 'lucide-react';
 
 interface BusStop {
@@ -104,7 +106,17 @@ const BendyBusIcon = ({ className = "w-4 h-3.5" }: { className?: string }) => (
 
 
 export default function App() {
-  const [data, setData] = useState<Record<string, StopData>>({});
+  const [feed, setFeed] = useState<FeedState<StopData>>({ data: {}, updatedAt: {}, errors: {} });
+  const data = feed.data;
+  const [clock, setClock] = useState(Date.now);
+  const [pendingStops, setPendingStops] = useState<string[]>([]);
+  const inFlightStops = useRef(new Set<string>());
+  const allRefreshInFlight = useRef(false);
+
+  useEffect(() => {
+    const timer = setInterval(() => setClock(Date.now()), 1000);
+    return () => clearInterval(timer);
+  }, []);
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
@@ -129,6 +141,7 @@ export default function App() {
     busNo: string,
     defaultTravelMins: number
   ) => {
+    if (isFeedStale(feed, fromStopCode, clock) || isFeedStale(feed, toStopCode, clock)) return null;
     const fromStop = data[fromStopCode];
     const toStop = data[toStopCode];
     const fromBus = fromStop?.buses.find((bus) => bus.busNo === busNo);
@@ -191,12 +204,13 @@ export default function App() {
 
   const fetchStopData = useCallback(async (stop: BusStop): Promise<StopData | null> => {
     try {
-      const response = await fetch(`/api/bus-arrival?stopCode=${stop.id}`);
+      const response = await fetch(`/api/bus-arrival?stopCode=${stop.id}`, { signal: AbortSignal.timeout(12000) });
       if (!response.ok) throw new Error('API request failed');
       const payload = await response.json();
       
       const source = payload.source;
       const apiData = payload.data;
+      if (!apiData || !['LTA', 'ArriveLah'].includes(source) || !Array.isArray(source === 'LTA' ? apiData.Services : apiData.services)) throw new Error('Invalid arrival feed');
       const busDataMap: Record<string, Timing[]> = {};
 
       if (source === 'LTA') {
@@ -261,20 +275,37 @@ export default function App() {
     }
   }, []);
 
-  const refreshAll = useCallback(async () => {
-    setRefreshing(true);
-    const results = await Promise.all(STOPS.map(stop => fetchStopData(stop)));
-    const newData: Record<string, StopData> = {};
-    results.forEach((res, index) => {
-      if (res) {
-        newData[STOPS[index].id] = res;
-      }
-    });
-    setData(newData);
-    setLastUpdated(new Date());
-    setLoading(false);
-    setRefreshing(false);
+  const refreshStops = useCallback(async (stops: BusStop[]) => {
+    const available = stops.filter(stop => !inFlightStops.current.has(stop.id));
+    available.forEach(stop => inFlightStops.current.add(stop.id));
+    setPendingStops(Array.from(inFlightStops.current));
+    try {
+      await Promise.all(available.map(async stop => {
+        const result = await fetchStopData(stop);
+        const timestamp = Date.now();
+        setFeed(previous => mergeFeedResults(previous, [{ id: stop.id, data: result }], timestamp));
+        if (result) setLastUpdated(new Date(timestamp));
+        inFlightStops.current.delete(stop.id);
+        setPendingStops(Array.from(inFlightStops.current));
+      }));
+    } finally {
+      available.forEach(stop => inFlightStops.current.delete(stop.id));
+      setPendingStops(Array.from(inFlightStops.current));
+    }
   }, [fetchStopData]);
+
+  const refreshAll = useCallback(async () => {
+    if (allRefreshInFlight.current) return;
+    allRefreshInFlight.current = true;
+    setRefreshing(true);
+    try {
+      await refreshStops(STOPS);
+    } finally {
+      setLoading(false);
+      setRefreshing(false);
+      allRefreshInFlight.current = false;
+    }
+  }, [refreshStops]);
 
   useEffect(() => {
     refreshAll();
@@ -303,10 +334,12 @@ export default function App() {
     .map((stop) => data[stop.id])
     .filter((stopData): stopData is StopData => Boolean(stopData));
 
-  const liveStopCount = visibleStopData.length;
-  const liveServiceCount = visibleStopData.reduce((total, stopData) => total + stopData.buses.length, 0);
+  const freshStopData = visibleStopData.filter(stop => !isFeedStale(feed, stop.stopCode, clock));
+  const staleStopCount = filteredStops.filter(stop => isFeedStale(feed, stop.id, clock)).length;
+  const liveStopCount = freshStopData.length;
+  const liveServiceCount = freshStopData.reduce((total, stopData) => total + stopData.buses.length, 0);
 
-  const nextDeparture = visibleStopData.reduce<{
+  const nextDeparture = freshStopData.reduce<{
     mins: number;
     busNo: string;
     stopName: string;
@@ -362,9 +395,9 @@ export default function App() {
         ? '🌇 Evening Return is active! Track Bus 107, 57, 100 to UIC Building, Bus 674 back to Tengah, or Bus 872 back to Tengah with live ETAs.'
         : '🚇 Ready for your commute? Toggle Morning or Evening modes to focus on specific routes, stops, and timings.';
 
-  const liveStatusLabel = loading ? 'Syncing live feeds' : refreshing ? 'Refreshing network' : isAutoRefresh ? 'Auto-refresh live' : 'Manual refresh';
+  const liveStatusLabel = loading ? 'Syncing live feeds' : refreshing ? 'Refreshing network' : staleStopCount > 0 ? `${staleStopCount} stops need refresh` : isAutoRefresh ? 'Auto-refresh live' : 'Manual refresh';
   const nextDepartureLabel = nextDeparture ? (nextDeparture.mins === 0 ? 'Arr' : `${nextDeparture.mins}m`) : '—';
-  const lastUpdatedLabel = lastUpdated ? `Updated ${lastUpdated.toLocaleTimeString()}` : 'Awaiting first refresh';
+  const lastUpdatedLabel = lastUpdated ? `Last success ${lastUpdated.toLocaleTimeString('en-SG', { timeZone: 'Asia/Singapore' })} SGT` : 'Awaiting first refresh';
 
   const stopAccentClass = (stopType: BusStop['type']) => {
     if (stopType === 'morning') return 'from-amber-400 via-orange-400 to-brand-500';
@@ -483,7 +516,7 @@ export default function App() {
           </div>
         </section>
 
-        <section className={viewMode === 'info' ? 'mb-5 grid gap-3 sm:gap-4 lg:grid-cols-[1.05fr_0.95fr]' : 'hidden'}>
+        <section data-testid="info-view" className={viewMode === 'info' ? 'mb-5 grid gap-3 sm:gap-4 lg:grid-cols-[1.05fr_0.95fr]' : 'hidden'}>
           <div className="rounded-3xl border border-slate-200 bg-white p-4 shadow-sm dark:border-slate-800 dark:bg-slate-900 sm:p-6">
             <p className="text-[10px] font-bold uppercase tracking-[0.26em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
               Info page
@@ -528,7 +561,7 @@ export default function App() {
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">/{filteredStops.length} visible</span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                Stops are filtered by the current mode and updated live from both feeds.
+                Only fresh feeds count as live; stale and failed stops are excluded.
               </p>
             </div>
 
@@ -554,7 +587,7 @@ export default function App() {
                 <span className="text-xs font-medium text-slate-500 dark:text-slate-400">includes walking buffer</span>
               </div>
               <p className="mt-2 text-xs leading-relaxed text-slate-500 dark:text-slate-400">
-                {nextDeparture ? `${nextDeparture.busNo} · ${nextDeparture.stopName}` : 'Waiting for fresh data.'}
+                {nextDeparture ? `${nextDeparture.busNo} · ${nextDeparture.stopName}` : 'No catchable bus from fresh feeds.'}
               </p>
             </div>
 
@@ -583,36 +616,42 @@ export default function App() {
                 </p>
               </div>
               <span className="rounded-full border border-slate-200 bg-slate-50 px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-                {visibleStopData.length} live
+                {liveStopCount} live · {staleStopCount} need refresh
               </span>
             </div>
 
             <div className="mt-4 grid gap-3 md:grid-cols-2">
-              {visibleStopData.map((stopData) => {
-                const stop = STOPS.find((entry) => entry.id === stopData.stopCode);
+              {filteredStops.map((stop) => {
+                const stopData = data[stop.id];
+                const stale = isFeedStale(feed, stop.id, clock);
+                const pending = pendingStops.includes(stop.id);
                 return (
-                  <div key={stopData.stopCode} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
+                  <div key={stop.id} className="rounded-2xl border border-slate-200 bg-slate-50 p-3 dark:border-slate-800 dark:bg-slate-950 sm:p-4">
                     <div className="flex items-start justify-between gap-3">
                       <div>
-                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{stopData.name}</p>
-                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{stopData.roadName}</p>
+                        <p className="text-sm font-semibold text-slate-950 dark:text-white">{stop.name}</p>
+                        <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">{stop.roadName}</p>
                       </div>
                       <span className="rounded-full border border-slate-200 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.2em] text-slate-500 dark:border-slate-800 dark:bg-slate-950 dark:text-slate-400">
-                        {stopData.source}
+                        {stopData?.source || 'Unavailable'}
                       </span>
                     </div>
 
                     <div className="mt-3 flex flex-wrap items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
-                      <span className="rounded-full border border-slate-200 bg-white px-2 py-1 dark:border-slate-800 dark:bg-slate-950">{stopData.buses.length} services</span>
+                      <span className="rounded-full border border-slate-200 bg-white px-2 py-1 dark:border-slate-800 dark:bg-slate-950">{stopData?.buses.length || 0} services</span>
                       {stop && (
                         <span className="rounded-full border border-slate-200 bg-white px-2 py-1 dark:border-slate-800 dark:bg-slate-950">{stopTypeLabel(stop.type)}</span>
                       )}
                       {stop && stop.walkTime > 0 && (
                         <span className="rounded-full border border-slate-200 bg-white px-2 py-1 dark:border-slate-800 dark:bg-slate-950">{stop.walkTime}m walk</span>
                       )}
-                      {stopData.buses[0] && (
+                      {stopData?.buses[0] && (
                         <span className="rounded-full border border-slate-200 bg-white px-2 py-1 dark:border-slate-800 dark:bg-slate-950">Lead {stopData.buses[0].busNo}</span>
                       )}
+                    </div>
+                    <div className="mt-3 flex flex-wrap items-center justify-between gap-2 text-xs text-slate-600 dark:text-slate-300">
+                      <span>{feed.updatedAt[stop.id] !== undefined ? `${stale ? 'Stale · last success' : 'Updated'} ${new Date(feed.updatedAt[stop.id]).toLocaleTimeString('en-SG', { timeZone: 'Asia/Singapore' })} SGT` : 'No successful update'}{feed.errors[stop.id] && ' · Refresh failed'}</span>
+                      {stale && <button type="button" onClick={() => refreshStops([stop])} disabled={pending} aria-label={`Retry ${stop.name}`} className="min-h-11 rounded-lg border border-slate-300 px-3 font-semibold disabled:opacity-50 dark:border-slate-700">{pending ? 'Retrying…' : 'Retry'}</button>}
                     </div>
                   </div>
                 );
@@ -677,7 +716,7 @@ export default function App() {
 
 
 
-        {loading ? (
+        {viewMode === 'board' && (loading ? (
           <div className="flex flex-col items-center justify-center gap-4 py-20">
             <RefreshCw className="h-10 w-10 animate-spin text-brand-500" />
             <p className="font-medium text-slate-500 animate-pulse dark:text-slate-400">
@@ -688,10 +727,14 @@ export default function App() {
           <div data-testid="arrival-board" className="grid grid-cols-1 gap-3 sm:gap-5 lg:grid-cols-2">
             {filteredStops.map((stop) => {
               const stopData = data[stop.id];
+              const stale = isFeedStale(feed, stop.id, clock);
+              const pending = pendingStops.includes(stop.id);
 
               return (
                 <div
                   key={stop.id}
+                  data-stop-id={stop.id}
+                  data-stale={stale}
                   className="relative overflow-hidden rounded-3xl border border-slate-200/80 bg-white/90 shadow-lg shadow-slate-950/5 transition hover:-translate-y-0.5 hover:border-slate-300 hover:shadow-slate-950/10 dark:border-slate-800 dark:bg-slate-900/65 dark:hover:border-slate-700 dark:hover:shadow-slate-950/25 sm:shadow-2xl"
                 >
                   <div className={`absolute inset-x-0 top-0 h-1 bg-gradient-to-r ${stopAccentClass(stop.type)}`} />
@@ -748,6 +791,19 @@ export default function App() {
                   </div>
 
                   <div className="px-3 pb-3 pt-3 sm:px-5 sm:pb-5 sm:pt-4">
+                    <div className={`mb-3 flex flex-wrap items-center justify-between gap-2 rounded-xl px-2 py-1 text-xs ${stale ? 'bg-amber-50 text-amber-800 dark:bg-amber-500/10 dark:text-amber-200' : 'text-slate-500 dark:text-slate-400'}`} data-testid="stop-freshness">
+                      <span role="status">
+                        {feed.updatedAt[stop.id] !== undefined
+                          ? `${stale ? 'Stale · last success' : 'Updated'} ${new Date(feed.updatedAt[stop.id]).toLocaleTimeString('en-SG', { timeZone: 'Asia/Singapore' })} SGT`
+                          : pending ? 'Fetching arrivals…' : 'Arrival feed unavailable'}
+                        {feed.errors[stop.id] && ' · Refresh failed'}
+                      </span>
+                      {stale && (
+                        <button type="button" onClick={() => refreshStops([stop])} disabled={pending} aria-label={`Retry ${stop.name}`} className="min-h-11 rounded-lg border border-amber-300 px-3 font-semibold disabled:opacity-50 dark:border-amber-500/30">
+                          {pending ? 'Retrying…' : 'Retry'}
+                        </button>
+                      )}
+                    </div>
                     <div className="mb-2.5 flex items-center justify-between sm:mb-3">
                       <div>
                         <p className="text-[10px] font-bold uppercase tracking-[0.24em] text-slate-500 dark:text-slate-400 sm:text-[11px]">
@@ -777,7 +833,7 @@ export default function App() {
                           (activeTab === 'morning' && ['872', '452', '871', '674'].includes(bus.busNo)) ||
                           (activeTab === 'evening' && ['674', '872', '57', '100', '107', '871', '452'].includes(bus.busNo));
 
-                        const departure = getDepartureGuidance(bus.timings, stop.walkTime);
+                        const departure = stale ? null : getDepartureGuidance(bus.timings, stop.walkTime);
 
                         // Find matching ETA route
                         const etaRoute = ETA_ROUTES.find(
@@ -839,7 +895,7 @@ export default function App() {
                             <div className="min-w-0 flex-1 overflow-x-auto no-scrollbar py-2">
                               {bus.timings.length > 0 && (
                                 <p className="mb-1 text-right text-[11px] font-semibold leading-4 text-slate-600 dark:text-slate-300" data-testid="departure-guidance">
-                                  {departure
+                                  {stale ? 'Last-known timings · refresh to plan your walk' : departure
                                     ? `${departure.index > 0 ? 'Too soon to walk · ' : ''}Next catchable bus ${departure.arrivalMins}m · ${departure.status === 'leave-now' ? 'Leave now' : `leave in ${departure.leaveInMins}m`}`
                                     : 'Too soon to walk · wait for later arrivals'}
                                 </p>
@@ -862,8 +918,8 @@ export default function App() {
                                   return (
                                     <div
                                       key={idx}
-                                      aria-label={`${displayTime}; ${tooSoonToWalk ? 'too soon to walk from your starting point' : isCatchable ? 'next catchable bus' : 'later arrival'}`}
-                                      title={tooSoonToWalk ? 'Too soon to walk — choose a later bus' : isCatchable ? 'Next catchable bus, including a 1-minute boarding buffer' : 'Later arrival'}
+                                      aria-label={`${displayTime}; ${stale ? 'last-known timing, not live' : tooSoonToWalk ? 'too soon to walk from your starting point' : isCatchable ? 'next catchable bus' : 'later arrival'}`}
+                                      title={stale ? 'Last-known timing — do not use for departure decisions' : tooSoonToWalk ? 'Too soon to walk — choose a later bus' : isCatchable ? 'Next catchable bus, including a 1-minute boarding buffer' : 'Later arrival'}
                                       className={`relative flex min-w-[2.55rem] flex-col items-center justify-center rounded-lg border px-1.5 py-1.5 font-mono shadow-sm transition sm:min-w-[3.2rem] sm:px-2 sm:py-2 ${
                                         isCatchable
                                           ? isLeavingNow
@@ -903,7 +959,7 @@ export default function App() {
                                 ) : (
                                   <div className="flex flex-shrink-0 items-center gap-1.5 rounded-xl border border-slate-200 bg-slate-50 px-2 py-1.5 text-[10px] font-medium text-slate-500 dark:border-slate-800/80 dark:bg-slate-800/50 dark:text-slate-400 sm:px-3 sm:text-xs">
                                     <AlertTriangle className="h-3 w-3 text-slate-400 dark:text-slate-500 sm:h-3.5 sm:w-3.5" />
-                                    Not operating
+                                    {stale ? 'Last-known: no arrivals' : 'No arrivals reported'}
                                   </div>
                                 )}
                             </div>
@@ -914,7 +970,7 @@ export default function App() {
 
                       {(!stopData || stopData.buses.length === 0) && (
                         <div className="py-6 text-center text-sm text-slate-500 dark:text-slate-400">
-                          No timings available for this stop.
+                          {feed.errors[stop.id] ? 'Unable to load arrivals. Retry this stop.' : 'No arrivals reported for this stop.'}
                         </div>
                       )}
                     </div>
@@ -923,7 +979,7 @@ export default function App() {
               );
             })}
           </div>
-        )}
+        ))}
       </div>
     </div>
   );
